@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: gnay-api
+    runtime: node
+    plan: free
+    buildCommand: ""
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: HOST
+        value: 0.0.0.0
+      - key: GNAY_SITE_ORIGIN
+        value: https://gnay.netlify.app
+      - key: DISCORD_REDIRECT_URI
+        value: https://gnay.netlify.app/auth/discord/callback
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
