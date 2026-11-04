@@ -37,7 +37,11 @@ O arquivo `render.yaml` configura o servidor Node como serviço gratuito para te
 
 O plano gratuito não mantém arquivos locais após reinícios; não use para guardar dados importantes. Depois que o serviço iniciar, configure o Netlify para encaminhar `/auth/*`, `/api/*` e `/uploads/*` para a URL `onrender.com` do backend. Sem esses encaminhamentos, o login e as APIs continuarão retornando 404 no domínio Netlify.
 
-Integrações como pagamentos, estatísticas reais, MFA, templates e recursos administrativos continuam dependendo de serviços adicionais.
+O arquivo `netlify.toml` configura esses encaminhamentos para `https://gnay-api.onrender.com`. Inclua-o no deploy do Netlify para ativar o login e as APIs no domínio publicado.
+
+Os contadores públicos e as estatísticas do painel são calculados a partir das contas, arquivos enviados e eventos reais de visualização e clique armazenados pelo backend. Dados de país são registrados quando o Netlify encaminha o código de país da visita. Como o serviço gratuito do Render usa armazenamento temporário, esses dados podem ser perdidos quando o serviço reinicia.
+
+Integrações como pagamentos, MFA, templates e recursos administrativos continuam dependendo de serviços adicionais.
 
 ## Cartão e atividades do Discord
 

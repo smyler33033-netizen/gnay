@@ -10,6 +10,31 @@ const STORE_FILE = path.join(DATA_DIR, "store.json");
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 const OAUTH_TTL = 10 * 60 * 1000;
 const COOKIE_NAME = "gnay_session";
+const RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "badges",
+  "conexoes",
+  "config",
+  "customizacao",
+  "faq",
+  "help",
+  "home",
+  "layout",
+  "links",
+  "login",
+  "logincomshooting",
+  "modelo",
+  "modelos",
+  "painel",
+  "personalizar",
+  "perfil",
+  "precos",
+  "recursos",
+  "shooting",
+  "staff",
+  "estatisticas",
+]);
 const pendingOAuth = new Map();
 const uploadParts = new Map();
 const discordPresenceCache = new Map();
@@ -358,8 +383,71 @@ async function handleOAuthCallback(req, res, url) {
 
 async function handleApi(req, res, url) {
   const { pathname } = url;
+  const viewMatch = pathname.match(/^\/api\/view\/([a-z0-9_-]{3,20})$/);
+  if (req.method === "POST" && viewMatch) {
+    if (!checkOrigin(req, res)) return;
+    const slug = viewMatch[1];
+    if (!store.users[slug]) {
+      sendJson(res, 404, { error: "Página não encontrada." });
+      return;
+    }
+    const body = await readJson(req, 16 * 1024);
+    const profile = store.profiles[slug] || (store.profiles[slug] = {});
+    const day = new Date().toISOString().slice(0, 10);
+    profile.views = (Number.isSafeInteger(profile.views) ? profile.views : 0) + 1;
+    profile.vd = profile.vd && typeof profile.vd === "object" && !Array.isArray(profile.vd) ? profile.vd : {};
+    profile.vd[day] = (Number.isSafeInteger(profile.vd[day]) ? profile.vd[day] : 0) + 1;
+    const device = body.dv === "Celular" ? "Celular" : body.dv === "Computador" ? "Computador" : "Outro";
+    profile.dv = profile.dv && typeof profile.dv === "object" && !Array.isArray(profile.dv) ? profile.dv : {};
+    profile.dv[device] = (Number.isSafeInteger(profile.dv[device]) ? profile.dv[device] : 0) + 1;
+    const source = typeof body.src === "string" ? body.src.trim().slice(0, 120) || "Direto" : "Direto";
+    profile.src = profile.src && typeof profile.src === "object" && !Array.isArray(profile.src) ? profile.src : {};
+    profile.src[source] = (Number.isSafeInteger(profile.src[source]) ? profile.src[source] : 0) + 1;
+    const country = String(req.headers["x-nf-country"] || req.headers["x-country-code"] || "").toUpperCase();
+    if (/^[A-Z]{2}$/.test(country) && country !== "XX") {
+      profile.ctry = profile.ctry && typeof profile.ctry === "object" && !Array.isArray(profile.ctry) ? profile.ctry : {};
+      profile.ctry[country] = (Number.isSafeInteger(profile.ctry[country]) ? profile.ctry[country] : 0) + 1;
+    }
+    store.profiles[slug] = profile;
+    saveStore();
+    sendJson(res, 200, { views: profile.views });
+    return;
+  }
+
+  const clickMatch = pathname.match(/^\/api\/click\/([a-z0-9_-]{3,20})$/);
+  if (req.method === "POST" && clickMatch) {
+    if (!checkOrigin(req, res)) return;
+    const slug = clickMatch[1];
+    if (!store.users[slug]) {
+      sendJson(res, 404, { error: "Página não encontrada." });
+      return;
+    }
+    const body = await readJson(req, 16 * 1024);
+    const profile = store.profiles[slug] || (store.profiles[slug] = {});
+    const day = new Date().toISOString().slice(0, 10);
+    profile.clicks = (Number.isSafeInteger(profile.clicks) ? profile.clicks : 0) + 1;
+    profile.cd = profile.cd && typeof profile.cd === "object" && !Array.isArray(profile.cd) ? profile.cd : {};
+    profile.cd[day] = (Number.isSafeInteger(profile.cd[day]) ? profile.cd[day] : 0) + 1;
+    const name = typeof body.n === "string" ? body.n.trim().slice(0, 80) || "Link" : "Link";
+    profile.nc = profile.nc && typeof profile.nc === "object" && !Array.isArray(profile.nc) ? profile.nc : {};
+    profile.nc[name] = (Number.isSafeInteger(profile.nc[name]) ? profile.nc[name] : 0) + 1;
+    store.profiles[slug] = profile;
+    saveStore();
+    sendJson(res, 200, { clicks: profile.clicks });
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/stats") {
-    sendJson(res, 200, { views: 0, users: 0, uploads: 0, subs: 0 });
+    const views = Object.values(store.profiles).reduce(
+      (total, profile) => total + (Number.isSafeInteger(profile.views) ? profile.views : 0),
+      0,
+    );
+    const users = Object.keys(store.users).length;
+    const subs = Object.values(store.users).filter((user) => user.premium).length;
+    const uploads = (await fs.promises.readdir(UPLOAD_DIR, { withFileTypes: true })).filter((entry) =>
+      entry.isFile(),
+    ).length;
+    sendJson(res, 200, { views, users, uploads, subs });
     return;
   }
 
@@ -427,13 +515,50 @@ async function handleApi(req, res, url) {
     sendJson(res, 200, {
       slug,
       profile,
-      meta: publicUser(user),
+      meta: Object.assign(publicUser(user), { views: Number.isSafeInteger(profile.views) ? profile.views : 0 }),
     });
     return;
   }
 
   const session = requireUser(req, res);
   if (!session) return;
+
+  if (req.method === "POST" && pathname === "/api/rename") {
+    if (!checkOrigin(req, res)) return;
+    const body = await readJson(req, 16 * 1024);
+    const slug = typeof body.slug === "string" ? body.slug : "";
+    if (!/^[a-z0-9_-]{3,20}$/.test(slug) || RESERVED_SLUGS.has(slug)) {
+      sendJson(res, 400, { error: "Nome de usuário inválido ou reservado." });
+      return;
+    }
+    if (slug === session.user.slug) {
+      sendJson(res, 400, { error: "Esse já é o seu nome de usuário." });
+      return;
+    }
+    if (store.users[slug]) {
+      sendJson(res, 409, { error: "Esse nome de usuário já está em uso." });
+      return;
+    }
+
+    const oldSlug = session.user.slug;
+    const user = session.user;
+    delete store.users[oldSlug];
+    user.slug = slug;
+    store.users[slug] = user;
+    if (Object.hasOwn(store.profiles, oldSlug)) {
+      store.profiles[slug] = store.profiles[oldSlug];
+      delete store.profiles[oldSlug];
+    }
+    for (const activeSession of Object.values(store.sessions)) {
+      if (activeSession.slug === oldSlug) activeSession.slug = slug;
+    }
+    for (const upload of uploadParts.values()) {
+      if (upload.slug === oldSlug) upload.slug = slug;
+    }
+    saveStore();
+    sendJson(res, 200, { user: publicUser(user) });
+    return;
+  }
 
   if (req.method === "PUT" && pathname === "/api/profile") {
     if (!checkOrigin(req, res)) return;
@@ -444,6 +569,10 @@ async function handleApi(req, res, url) {
     }
     const profile = cleanProfile(body.profile);
     profile.dcId = session.user.discordId;
+    const existing = store.profiles[session.user.slug] || {};
+    for (const key of ["views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"]) {
+      if (existing[key] !== undefined) profile[key] = existing[key];
+    }
     store.profiles[session.user.slug] = profile;
     saveStore();
     sendJson(res, 200, { profile: store.profiles[session.user.slug] });
@@ -555,11 +684,16 @@ async function serveStatic(req, res, pathname) {
   const uploadName = decoded.startsWith("/uploads/") ? decoded.slice("/uploads/".length) : "";
   const isAllowedUpload = !!uploadName && path.basename(uploadName) === uploadName;
   const isPublicFile = ["/", "/index.html", "/hero-bg.jpg", "/shooting-banner.jpg"].includes(decoded);
-  if (!isAllowedUpload && !isPublicFile) {
+  const isAppRoute = !path.extname(decoded) && !decoded.startsWith("/uploads/");
+  if (!isAllowedUpload && !isPublicFile && !isAppRoute) {
     sendJson(res, 404, { error: "Arquivo não encontrado." });
     return;
   }
-  const relative = isAllowedUpload ? path.join("uploads", uploadName) : decoded === "/" ? "index.html" : decoded.slice(1);
+  const relative = isAllowedUpload
+    ? path.join("uploads", uploadName)
+    : isAppRoute
+      ? "index.html"
+      : decoded.slice(1);
   const file = path.resolve(ROOT, relative);
   if (file !== ROOT && !file.startsWith(ROOT + path.sep)) {
     sendJson(res, 403, { error: "Caminho não permitido." });

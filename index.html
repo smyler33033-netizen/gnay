@@ -4,6 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <style>
+      * {
+        scrollbar-width: none;
+      }
+      *::-webkit-scrollbar {
+        display: none;
+      }
       html.bp #v-home {
         display: none !important;
       }
@@ -224,19 +230,25 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="gnay" />
-    <meta property="og:title" content="gnay | Home" />
+    <meta property="og:url" content="https://gnay.netlify.app/" />
+    <meta property="og:title" content="gnay — sua página, suas conexões" />
     <meta
       property="og:description"
-      content="gnay é sua escolha para páginas link-in-bio modernas e cheias de recursos, com hospedagem de arquivos rápida e segura."
+      content="Reúna suas redes, personalize sua página e compartilhe tudo em um só lugar com a gnay."
     />
-    <meta property="og:image" content="shooting-banner.jpg" />
-    <meta property="og:image:secure_url" content="shooting-banner.jpg" />
+    <meta property="og:image" content="https://gnay.netlify.app/shooting-banner.jpg" />
+    <meta property="og:image:secure_url" content="https://gnay.netlify.app/shooting-banner.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="gnay" />
+    <meta property="og:image:width" content="1672" />
+    <meta property="og:image:height" content="941" />
+    <meta property="og:image:alt" content="Logo gnay em azul sobre fundo escuro" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://gnay/shooting-banner.jpg" />
+    <meta name="twitter:title" content="gnay — sua página, suas conexões" />
+    <meta
+      name="twitter:description"
+      content="Reúna suas redes, personalize sua página e compartilhe tudo em um só lugar com a gnay."
+    />
+    <meta name="twitter:image" content="https://gnay.netlify.app/shooting-banner.jpg" />
     <meta name="theme-color" content="#14264d" />
     <link
       id="msl"
@@ -6644,7 +6656,8 @@
           </div>
           <div>
             <h4>Recursos</h4>
-            <a href="#painel">Painel</a><a href="#estatisticas">Estatísticas</a><a href="#">Central de Ajuda</a>
+            <a href="#painel">Painel</a><a href="#estatisticas">Estatísticas</a
+            ><a href="https://discord.gg/gnay" target="_blank" rel="noopener noreferrer">Suporte no Discord</a>
           </div>
           <div>
             <h4>Legal</h4>
@@ -7002,7 +7015,9 @@
         ><span class="ms" style="font-size: 30px" aria-hidden="true">photo_camera</span>Image Host</a
       >
       <div class="help">
-        <a href="#painel"><span class="ms" style="font-size: 28px" aria-hidden="true">help</span>Central de Ajuda</a>
+        <a href="https://discord.gg/gnay" target="_blank" rel="noopener noreferrer"
+          ><span class="ms" style="font-size: 28px" aria-hidden="true">help</span>Suporte no Discord</a
+        >
         <a href="#" id="accBtn" style="background: #1a1a1a; border: 2px solid #2a2a2a"
           ><span class="ms" style="font-size: 28px">group</span>Gerenciar contas</a
         >
@@ -8863,6 +8878,7 @@
       function route() {
         document.documentElement.classList.remove("bp");
         const h = getH();
+        if (!h || h === "home") homeStats();
         if (S && (h === "painel" || h === "logincomshooting")) {
           let nx = 0;
           try {
@@ -9514,7 +9530,7 @@
       const valid = (u) => /^[a-z0-9_-]{3,20}$/.test(u);
       /* ===== Login somente com Discord: o servidor faz o OAuth (code flow) e cria a sessão ===== */
       let PRE = "";
-      async function api(m, u, b) {
+      async function api(m, u, b, options = {}) {
         const r = await fetch(u, {
           method: m,
           headers: Object.assign(
@@ -9523,6 +9539,7 @@
           ),
           body: b === undefined ? undefined : JSON.stringify(b),
           credentials: "same-origin",
+          keepalive: options.keepalive === true,
         });
         let j = null;
         try {
@@ -9550,6 +9567,10 @@
           .replace(/^@/, "")
           .toLowerCase();
         if (!p) p = location.hash.slice(1).toLowerCase();
+        else if (p === "painel") {
+          const legacyProfile = location.hash.slice(1).toLowerCase();
+          if (valid(legacyProfile) && !RES.has(legacyProfile)) p = legacyProfile;
+        }
         const mm = p.match(/^modelos?\/(\d{1,9})$/);
         MDLINK = mm ? +mm[1] : 0;
         if (mm) p = "modelos";
@@ -9790,7 +9811,6 @@
         } catch (e) {}
       }
       async function boot() {
-        homeStats();
         const h0 = getH(),
           prof0 = !!h0 && !KN.includes(h0) && valid(h0) && !RES.has(h0);
         if (prof0) route();
@@ -10440,7 +10460,7 @@
         const mu = $("#myUrl");
         if (mu) {
           mu.textContent = "gnay/" + S;
-          mu.href = "#" + S;
+          mu.href = location.origin + "/" + encodeURIComponent(S);
         }
         const L = P.links || [],
           steps = [
@@ -12916,7 +12936,6 @@
         if (!gated) late.forEach((f) => f && f());
         return root;
       }
-      const seenV = {};
       function renderProf(h) {
         stopAudio();
         cancelAnimationFrame(fxRaf);
@@ -12925,8 +12944,7 @@
         const w = $("#v-prof"),
           mine = U[h] ? h : ALM()[h];
         const draw = (Q, ow, own) => {
-          if (!own && !seenV[ow]) {
-            seenV[ow] = 1;
+          if (!own) {
             const dv = /Mobi|Android|iPhone/.test(navigator.userAgent) ? "Celular" : "Computador";
             let sr = "Direto";
             try {
@@ -12946,7 +12964,7 @@
           }
           const count = (l) => {
             if (own) return;
-            api("POST", "/api/click/" + encodeURIComponent(ow), { n: l.n }).catch(() => {});
+            api("POST", "/api/click/" + encodeURIComponent(ow), { n: l.n }, { keepalive: true }).catch(() => {});
           };
           w.innerHTML = "";
           w.appendChild(profDOM(Q, ow, { own, count }));
@@ -13665,23 +13683,6 @@
         e.preventDefault();
         toast("Customização: em breve.");
       };
-      $$("#side a").forEach((a) => {
-        const t = lbl(a);
-        if (t === "Central de Ajuda")
-          a.onclick = (e) => {
-            e.preventDefault();
-            side(false);
-            toast(t + ": em breve.");
-          };
-      });
-      $$("footer a").forEach((a) => {
-        const t = a.textContent.trim();
-        if (["Central de Ajuda", "Termos de serviço", "Privacidade"].includes(t))
-          a.onclick = (e) => {
-            e.preventDefault();
-            toast(t + ": página em breve.");
-          };
-      });
       $$(".ib.dc").forEach((b) => {
         b.style.cursor = "pointer";
         b.onclick = () => {
@@ -15532,7 +15533,7 @@
             '<div class="hd"><i style="background:#555"></i><b></b></div><div style="color:#5aa0ff;font-size:17px;margin-bottom:8px"></div><div class="dce"><small>gnay</small><b class="t"></b><small class="d"></small></div>';
           m.querySelector(".hd i").textContent = S[0].toUpperCase();
           m.querySelector(".hd b").textContent = S;
-          m.children[1].textContent = "https://gnay/#" + S;
+          m.children[1].textContent = location.origin + "/" + encodeURIComponent(S);
           m.querySelector(".t").textContent = "@" + S;
           m.querySelector(".d").textContent = bio || "Página de " + nm + " na gnay.";
         }
