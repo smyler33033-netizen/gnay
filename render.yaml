@@ -19,3 +19,5 @@ services:
         sync: false
       - key: DISCORD_CLIENT_SECRET
         sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false

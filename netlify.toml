@@ -21,6 +21,24 @@
   path = "/:slug"
 
 [[redirects]]
+  from = "/local-test"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/local-test/"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/local-test/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

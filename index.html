@@ -204,6 +204,7 @@
             "layout",
             "recursos",
             "modelos",
+            "chat",
             "modelo",
             "painel",
             "estatisticas",
@@ -2968,7 +2969,7 @@
       }
       .name-wave span {
         display: inline-block;
-        animation: name-wave 2.8s ease-in-out infinite;
+        animation: name-wave 1.8s ease-in-out infinite;
       }
       @keyframes name-wave {
         0%,
@@ -2996,8 +2997,10 @@
       }
       @media (prefers-reduced-motion: reduce) {
         .rnb,
-        .rgb2 {
-          animation: none;
+        .rgb2,
+        .name-wave span,
+        .name-hacker {
+          animation: none !important;
         }
       }
       .name-hacker {
@@ -7500,6 +7503,550 @@
       html[data-season="easter"] body.app #v-dash .halloween-hero p {
         color: #cabed0;
       }
+      .chat-heading,
+      .chat-composer-actions,
+      .chat-message,
+      .chat-author,
+      .chat-author-link,
+      .chat-composer-actions > div {
+        display: flex;
+        align-items: center;
+      }
+      .chat-heading {
+        justify-content: space-between;
+        gap: 16px;
+        margin: 20px 4px 24px;
+      }
+      .chat-heading h1 {
+        margin: 0 0 6px;
+      }
+      .chat-heading p {
+        margin: 0;
+        font-size: 18px;
+      }
+      .chat-live {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #35c58b55;
+        border-radius: 999px;
+        padding: 8px 14px;
+        color: #9ce8c8;
+        background: #35c58b14;
+      }
+      .chat-live i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #35c58b;
+        box-shadow: 0 0 12px #35c58b99;
+      }
+      .chat-panel {
+        display: flex;
+        min-height: min(68vh, 760px);
+        flex-direction: column;
+        padding: 0;
+        overflow: hidden;
+      }
+      .chat-messages {
+        display: flex;
+        flex: 1;
+        min-height: 280px;
+        max-height: 65vh;
+        flex-direction: column;
+        gap: 8px;
+        overflow: auto;
+        padding: 20px;
+        overscroll-behavior: contain;
+      }
+      .chat-empty {
+        margin: auto;
+        padding: 24px;
+        color: var(--mu);
+        text-align: center;
+      }
+      .chat-message {
+        align-items: flex-start;
+        gap: 12px;
+        border-radius: 16px;
+        padding: 12px;
+        transition: background 0.16s ease;
+      }
+      .chat-message:hover {
+        background: #ffffff09;
+      }
+      .chat-avatar {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        border: 1px solid #ffffff24;
+        border-radius: 50%;
+        background: #272631;
+        object-fit: cover;
+      }
+      .chat-profile-trigger {
+        display: block;
+        flex: 0 0 auto;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        cursor: pointer;
+      }
+      .chat-message-content {
+        min-width: 0;
+        flex: 1;
+      }
+      .chat-author {
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .chat-author-link {
+        gap: 7px;
+        padding: 0;
+        border: 0;
+        color: var(--tx);
+        background: transparent;
+        font: inherit;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .chat-author-link:hover {
+        color: var(--pl);
+      }
+      .chat-author-link:focus-visible,
+      .chat-profile-trigger:focus-visible {
+        outline: 2px solid var(--pl);
+        outline-offset: 3px;
+      }
+      .chat-discord-tag {
+        max-width: 180px;
+        overflow: hidden;
+        border: 1px solid #5865f255;
+        border-radius: 999px;
+        padding: 2px 8px;
+        color: #c4c9ff;
+        background: #5865f21a;
+        font-size: 13px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .chat-member-role {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #5cc8a655;
+        border-radius: 999px;
+        padding: 2px 9px;
+        color: #a7f3d0;
+        background: #10b98118;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .chat-member-role.admin {
+        border-color: #b38aff70;
+        color: #dbc4ff;
+        background: #8b5cf622;
+      }
+      .chat-time {
+        color: var(--mu);
+        font-size: 13px;
+      }
+      .chat-message-text {
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+      .chat-message audio {
+        display: block;
+        width: min(420px, 100%);
+        height: 42px;
+        margin-top: 8px;
+      }
+      .chat-composer {
+        border-top: 1px solid #ffffff14;
+        padding: 16px;
+        background: #09090c44;
+      }
+      .chat-composer textarea {
+        display: block;
+        width: 100%;
+        min-height: 54px;
+        max-height: 180px;
+        resize: vertical;
+        border: 1px solid #ffffff20;
+        border-radius: 14px;
+        padding: 14px;
+        color: var(--tx);
+        background: #09090caa;
+        font: inherit;
+        font-size: 16px;
+      }
+      .chat-composer textarea:focus {
+        border-color: var(--pl);
+        outline: 2px solid #ffffff12;
+      }
+      .chat-composer-actions {
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .chat-composer-actions > div {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .chat-composer-actions .btn {
+        display: inline-flex;
+        width: auto;
+        min-width: 0;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 14px;
+        font-size: 15px;
+      }
+      .chat-composer-actions .btn[hidden],
+      .chat-discord-tag[hidden] {
+        display: none;
+      }
+      .chat-hint {
+        color: var(--mu);
+        font-size: 13px;
+      }
+      .chat-heading-actions,
+      .chat-subheading,
+      .chat-dm-heading,
+      .chat-dm-peer,
+      .chat-modal-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .chat-heading-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .chat-heading-actions > [hidden],
+      .chat-modal-actions > [hidden] {
+        display: none;
+      }
+      .chat-message {
+        border: 1px solid transparent;
+        border-radius: 18px;
+      }
+      .chat-message:hover {
+        border-color: #ffffff10;
+        background: linear-gradient(110deg, #ffffff0b, #ffffff04);
+      }
+      .chat-author {
+        gap: 9px;
+        margin-bottom: 8px;
+      }
+      .chat-message-text {
+        line-height: 1.55;
+      }
+      .chat-time {
+        font-size: 12px;
+      }
+      .chat-sticker {
+        display: inline-flex;
+        min-width: 76px;
+        min-height: 76px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 5px;
+        border: 1px solid #ffffff16;
+        border-radius: 18px;
+        background: radial-gradient(circle at 30% 20%, #ffffff15, #ffffff04 70%);
+        font-size: 48px;
+      }
+      .chat-sticker-picker {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+        gap: 8px;
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ffffff14;
+        border-radius: 16px;
+        background: #101015;
+      }
+      .chat-sticker-picker[hidden],
+      .chat-social-view[hidden],
+      .chat-dm-view[hidden],
+      .chat-modal[hidden] {
+        display: none;
+      }
+      .chat-sticker-option {
+        display: grid;
+        min-height: 72px;
+        justify-items: center;
+        align-content: center;
+        gap: 3px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        color: var(--tx);
+        background: #ffffff08;
+        cursor: pointer;
+      }
+      .chat-sticker-option:hover {
+        border-color: #a78bfa70;
+        background: #a78bfa18;
+      }
+      .chat-sticker-option span:first-child {
+        font-size: 30px;
+      }
+      .chat-sticker-option span:last-child {
+        color: var(--mu);
+        font-size: 11px;
+      }
+      .chat-social-view {
+        padding: 22px;
+      }
+      .chat-subheading {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      .chat-subheading h2,
+      .chat-social-columns h3 {
+        margin: 0;
+      }
+      .chat-social-columns {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+      .chat-social-columns > section {
+        min-width: 0;
+        padding: 16px;
+        border: 1px solid #ffffff12;
+        border-radius: 18px;
+        background: #ffffff04;
+      }
+      .chat-social-columns h3 {
+        margin-bottom: 12px;
+        font-size: 16px;
+      }
+      .chat-social-friends {
+        grid-column: 1 / -1;
+      }
+      .chat-person-list {
+        display: grid;
+        gap: 9px;
+      }
+      .chat-person-row {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        border: 1px solid #ffffff10;
+        border-radius: 14px;
+        background: #ffffff05;
+      }
+      .chat-person-name {
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .chat-person-row .btn {
+        display: inline-flex;
+        width: auto;
+        min-width: 0;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 11px;
+      }
+      .chat-person-empty {
+        margin: 0;
+        color: var(--mu);
+        font-size: 14px;
+      }
+      .chat-dm-heading {
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+        border-bottom: 1px solid #ffffff14;
+      }
+      .chat-dm-peer {
+        margin-right: auto;
+      }
+      .chat-dm-peer div {
+        display: grid;
+        gap: 3px;
+      }
+      .chat-dm-peer small {
+        color: var(--mu);
+      }
+      .chat-modal {
+        position: fixed;
+        z-index: 10000;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+      }
+      .chat-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: #050509c9;
+        backdrop-filter: blur(8px);
+      }
+      .chat-modal-card {
+        position: relative;
+        width: min(460px, 100%);
+        padding: 28px;
+        border: 1px solid #ffffff1b;
+        border-radius: 24px;
+        background: linear-gradient(145deg, #1d1b25, #111116 72%);
+        box-shadow: 0 24px 90px #0009;
+        text-align: center;
+      }
+      .chat-modal-card h2 {
+        margin: 12px 0 4px;
+      }
+      .chat-modal-card p {
+        margin: 4px 0 14px;
+      }
+      .chat-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        color: var(--tx);
+        background: #ffffff10;
+        cursor: pointer;
+      }
+      .chat-profile-avatar {
+        width: 88px;
+        height: 88px;
+        border: 2px solid #ffffff22;
+        border-radius: 50%;
+        background: #292832;
+        object-fit: cover;
+      }
+      .chat-modal-actions {
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+      .chat-modal-actions .btn {
+        display: inline-flex;
+        width: auto;
+        align-items: center;
+        gap: 6px;
+      }
+      .chat-template-modal-card {
+        width: min(580px, 100%);
+        text-align: left;
+      }
+      .chat-template-list {
+        display: grid;
+        max-height: 52vh;
+        gap: 8px;
+        overflow: auto;
+      }
+      .chat-template-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        border: 1px solid #ffffff14;
+        border-radius: 14px;
+        color: var(--tx);
+        background: #ffffff07;
+        cursor: pointer;
+        text-align: left;
+      }
+      .chat-template-option:hover {
+        border-color: #a78bfa70;
+        background: #a78bfa14;
+      }
+      .chat-template-option img {
+        width: 54px;
+        height: 42px;
+        border-radius: 8px;
+        background: #202027;
+        object-fit: cover;
+      }
+      .chat-template-card {
+        display: flex;
+        width: min(360px, 100%);
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+        padding: 10px;
+        border: 1px solid #a78bfa30;
+        border-radius: 14px;
+        color: var(--tx);
+        background: #a78bfa0c;
+        text-decoration: none;
+      }
+      .chat-template-card img {
+        width: 72px;
+        height: 54px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      .chat-template-card span {
+        display: grid;
+        gap: 3px;
+      }
+      .chat-template-card small {
+        color: var(--mu);
+      }
+      @media (max-width: 600px) {
+        .chat-heading {
+          align-items: flex-start;
+        }
+        .chat-heading-actions {
+          align-items: flex-end;
+          flex-direction: column-reverse;
+        }
+        .chat-heading p {
+          max-width: 280px;
+          font-size: 16px;
+        }
+        .chat-messages {
+          min-height: 45vh;
+          padding: 10px;
+        }
+        .chat-composer {
+          padding: 12px;
+        }
+        .chat-composer-actions {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .chat-composer-actions > div {
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .chat-social-columns {
+          grid-template-columns: 1fr;
+        }
+        .chat-social-friends {
+          grid-column: auto;
+        }
+        .chat-dm-heading {
+          align-items: flex-start;
+        }
+        .chat-dm-peer {
+          order: -1;
+          width: 100%;
+        }
+        .chat-modal-card {
+          padding: 24px 18px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -8094,6 +8641,9 @@
       >
       <a class="sm" id="s-md" href="#modelos"
         ><span class="ms" style="font-size: 30px" aria-hidden="true">collections_bookmark</span>Modelos</a
+      >
+      <a class="sm" id="s-chat" href="#chat"
+        ><span class="ms" style="font-size: 30px" aria-hidden="true">forum</span>Chat Geral</a
       >
       <a class="sm" href="#" data-buy="premium"
         ><span class="ms" style="font-size: 30px" aria-hidden="true">diamond</span>Premium grátis</a
@@ -9074,6 +9624,118 @@
         <h2 class="mdtt" id="mdTt" hidden=""></h2>
         <div class="mdl" id="mdL" aria-live="polite"></div>
       </main>
+    </div>
+
+    <div class="view" id="v-chat">
+      <div class="top">
+        <button class="ib" data-side="" aria-label="Menu">
+          <span class="ms" style="font-size: 30px" aria-hidden="true">menu</span></button
+        ><button class="ib" data-side="" aria-label="Buscar">
+          <span class="ms" style="font-size: 28px" aria-hidden="true">search</span></button
+        ><a class="topv" href="#home">Minha página</a
+        ><span class="ib dc" style="cursor: pointer"
+          ><svg width="30" height="30"><use href="#dsc"></use></svg
+        ></span>
+      </div>
+      <main class="page">
+        <div class="chat-heading">
+          <div>
+            <h1 id="chatPageTitle">Chat Geral</h1>
+            <p class="mu" id="chatPageDescription">Converse com a comunidade. Clique em um perfil para ver opções.</p>
+          </div>
+          <div class="chat-heading-actions">
+            <button type="button" class="btn dark" id="chatFriendsOpen">
+              <span class="ms" aria-hidden="true">group</span>Amigos <span id="chatFriendCount"></span>
+            </button>
+            <span class="chat-live" id="chatLive"><i></i> Geral</span>
+          </div>
+        </div>
+        <div id="chatGeneralView">
+          <section class="cb chat-panel" aria-label="Chat Geral">
+          <div class="chat-messages" id="chatMessages" aria-live="polite">
+            <p class="chat-empty">Carregando conversa...</p>
+          </div>
+          <form class="chat-composer" id="chatForm">
+            <textarea id="chatInput" maxlength="1000" rows="2" placeholder="Escreva uma mensagem..." aria-label="Mensagem"></textarea>
+            <div class="chat-sticker-picker" id="chatStickerPicker" hidden></div>
+            <div class="chat-composer-actions">
+              <span class="chat-hint" id="chatStatus" role="status">Até 1000 caracteres · Áudio até 10 MB</span>
+              <div>
+                <button class="btn dark" id="chatStickerOpen" type="button" aria-expanded="false">
+                  <span class="ms" aria-hidden="true">mood</span>Figurinhas
+                </button>
+                <button class="btn dark" id="chatRecord" type="button">
+                  <span class="ms" aria-hidden="true">mic</span>Gravar áudio
+                </button>
+                <button class="btn" id="chatStop" type="button" hidden>
+                  <span class="ms" aria-hidden="true">stop</span>Parar e enviar
+                </button>
+                <button class="btn" id="chatSend" type="submit">
+                  <span class="ms" aria-hidden="true">send</span>Enviar
+                </button>
+              </div>
+            </div>
+          </form>
+          </section>
+        </div>
+        <section class="cb chat-social-view" id="chatSocialView" aria-label="Amigos e pedidos" hidden>
+          <div class="chat-subheading">
+            <button type="button" class="btn dark" id="chatSocialBack"><span class="ms" aria-hidden="true">arrow_back</span>Voltar ao Chat Geral</button>
+            <h2>Amigos e pedidos</h2>
+          </div>
+          <div class="chat-social-columns">
+            <section><h3>Pedidos recebidos</h3><div id="chatIncoming" class="chat-person-list"></div></section>
+            <section><h3>Pedidos enviados</h3><div id="chatOutgoing" class="chat-person-list"></div></section>
+            <section class="chat-social-friends"><h3>Seus amigos</h3><div id="chatFriends" class="chat-person-list"></div></section>
+          </div>
+          <p class="chat-hint" id="chatSocialStatus" role="status"></p>
+        </section>
+        <section class="cb chat-panel chat-dm-view" id="chatDmView" aria-label="Conversa privada" hidden>
+          <div class="chat-dm-heading">
+            <button type="button" class="btn dark" id="chatDmBack"><span class="ms" aria-hidden="true">arrow_back</span>Voltar ao Chat Geral</button>
+            <div class="chat-dm-peer"><img class="chat-avatar" id="chatDmAvatar" alt=""><div><strong id="chatDmName"></strong><small>Conversa privada entre amigos</small></div></div>
+            <button type="button" class="btn dark" id="chatUnfriend"><span class="ms" aria-hidden="true">person_remove</span>Desfazer amizade</button>
+          </div>
+          <div class="chat-messages" id="chatDmMessages" aria-live="polite"></div>
+          <form class="chat-composer" id="chatDmForm">
+            <textarea id="chatDmInput" maxlength="1000" rows="2" placeholder="Escreva uma mensagem privada..." aria-label="Mensagem privada"></textarea>
+            <div class="chat-sticker-picker" id="chatDmStickerPicker" hidden></div>
+            <div class="chat-composer-actions">
+              <span class="chat-hint" id="chatDmStatus" role="status">Só você e seu amigo podem ver esta conversa.</span>
+              <div>
+                <button class="btn dark" id="chatDmStickerOpen" type="button" aria-expanded="false"><span class="ms" aria-hidden="true">mood</span>Figurinhas</button>
+                <button class="btn dark" id="chatSendTemplate" type="button"><span class="ms" aria-hidden="true">redeem</span>Enviar template</button>
+                <button class="btn" type="submit"><span class="ms" aria-hidden="true">send</span>Enviar</button>
+              </div>
+            </div>
+          </form>
+        </section>
+      </main>
+      <div class="chat-modal" id="chatProfileModal" hidden>
+        <div class="chat-modal-backdrop" data-chat-modal-close></div>
+        <section class="chat-modal-card" role="dialog" aria-modal="true" aria-labelledby="chatProfileName">
+          <button type="button" class="chat-modal-close" data-chat-modal-close aria-label="Fechar"><span class="ms" aria-hidden="true">close</span></button>
+          <img class="chat-profile-avatar" id="chatProfileAvatar" alt="">
+          <h2 id="chatProfileName"></h2>
+          <p id="chatProfileSlug"></p>
+          <p class="chat-hint" id="chatProfileStatus" role="status"></p>
+          <div class="chat-modal-actions">
+            <a class="btn dark" id="chatVisitProfile" target="_blank" rel="noopener noreferrer"><span class="ms" aria-hidden="true">open_in_new</span>Visitar bio</a>
+            <button type="button" class="btn" id="chatFriendAction"><span class="ms" aria-hidden="true">person_add</span>Adicionar pessoa</button>
+            <button type="button" class="btn dark" id="chatFriendDecline" hidden>Recusar pedido</button>
+          </div>
+        </section>
+      </div>
+      <div class="chat-modal" id="chatTemplateModal" hidden>
+        <div class="chat-modal-backdrop" data-chat-modal-close></div>
+        <section class="chat-modal-card chat-template-modal-card" role="dialog" aria-modal="true" aria-labelledby="chatTemplateTitle">
+          <button type="button" class="chat-modal-close" data-chat-modal-close aria-label="Fechar"><span class="ms" aria-hidden="true">close</span></button>
+          <h2 id="chatTemplateTitle">Enviar template público</h2>
+          <p class="chat-hint">A outra pessoa receberá um link para abrir o template.</p>
+          <div id="chatTemplateList" class="chat-template-list"></div>
+          <p class="chat-hint" id="chatTemplateStatus" role="status"></p>
+        </section>
+      </div>
     </div>
 
     <div class="sheet" id="mdSh">
@@ -10064,6 +10726,736 @@
         );
       }
 
+      let chatTimer = 0,
+        chatBusy = false,
+        chatBound = false,
+        chatSignature = "",
+        chatSocialTimer = 0,
+        chatSocialBusy = false,
+        chatSocial = { incoming: [], outgoing: [], friends: [] },
+        chatCurrentProfile = null,
+        chatCurrentFriend = null,
+        chatDmTimer = 0,
+        chatDmBusy = false,
+        chatDmSignature = "",
+        chatRecorder = null,
+        chatStream = null,
+        chatChunks = [],
+        chatDiscardRecording = false;
+      const chatTags = new Map();
+      const chatStickers = [
+        { id: "wave", emoji: "👋", name: "Oi" },
+        { id: "heart", emoji: "💖", name: "Coração" },
+        { id: "star", emoji: "🌟", name: "Estrela" },
+        { id: "party", emoji: "🎉", name: "Comemoração" },
+        { id: "cat", emoji: "😺", name: "Gatinho" },
+        { id: "fire", emoji: "🔥", name: "Fogo" },
+        { id: "moon", emoji: "🌙", name: "Lua" },
+        { id: "sparkle", emoji: "✨", name: "Brilho" },
+      ];
+      function chatStatus(text) {
+        $("#chatStatus").textContent = text;
+      }
+      function chatGuildTag(id, element) {
+        if (!id) return;
+        const cached = chatTags.get(id);
+        if (cached) {
+          cached.then((tag) => {
+            if (tag) {
+              element.textContent = tag;
+              element.hidden = false;
+            }
+          });
+          return;
+        }
+        const result = api("GET", "/api/discord/" + encodeURIComponent(id))
+          .then((response) => {
+            const user = response.data && response.data.discord_user;
+            const guild = user && (user.primary_guild || user.clan);
+            return guild && guild.tag && guild.identity_enabled !== false ? String(guild.tag).slice(0, 6) : "";
+          })
+          .catch((error) => {
+            console.warn("Não foi possível carregar a tag do Discord para o Chat Geral:", error);
+            return "";
+          });
+        chatTags.set(id, result);
+        result.then((tag) => {
+          if (tag) {
+            element.textContent = tag;
+            element.hidden = false;
+          }
+        });
+      }
+      function chatAuthorButton(author) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chat-profile-trigger";
+        button.setAttribute("aria-label", "Ver perfil de " + (author.name || "usuário"));
+        const avatar = document.createElement("img");
+        avatar.className = "chat-avatar";
+        avatar.alt = "";
+        avatar.loading = "lazy";
+        if (author.avatar) avatar.src = author.avatar;
+        avatar.onerror = () => {
+          avatar.onerror = null;
+          avatar.removeAttribute("src");
+        };
+        button.appendChild(avatar);
+        button.addEventListener("click", () => chatOpenProfile(author));
+        return button;
+      }
+      function chatAppendMessageContent(content, message, author) {
+        if (message.text) {
+          const text = document.createElement("div");
+          text.className = "chat-message-text";
+          text.textContent = message.text;
+          content.appendChild(text);
+        }
+        const sticker = chatStickers.find((item) => item.id === message.sticker);
+        if (sticker) {
+          const stickerElement = document.createElement("span");
+          stickerElement.className = "chat-sticker";
+          stickerElement.textContent = sticker.emoji;
+          stickerElement.setAttribute("role", "img");
+          stickerElement.setAttribute("aria-label", sticker.name);
+          content.appendChild(stickerElement);
+        }
+        if (message.audio) {
+          const audio = document.createElement("audio");
+          audio.controls = true;
+          audio.preload = "none";
+          audio.src = "/api/chat/audio/" + encodeURIComponent(message.audio);
+          audio.setAttribute("aria-label", "Áudio enviado por " + (author.name || "usuário"));
+          content.appendChild(audio);
+        }
+        if (message.template) {
+          const card = document.createElement("a");
+          card.className = "chat-template-card";
+          card.href = "/modelo/" + encodeURIComponent(message.template.id);
+          card.target = "_blank";
+          card.rel = "noopener noreferrer";
+          if (message.template.preview) {
+            const preview = document.createElement("img");
+            preview.src = message.template.preview;
+            preview.alt = "";
+            preview.loading = "lazy";
+            card.appendChild(preview);
+          }
+          const label = document.createElement("span");
+          const name = document.createElement("strong");
+          name.textContent = message.template.name || "Template público";
+          const owner = document.createElement("small");
+          owner.textContent = "Template de @" + (message.template.ownerSlug || "gnay");
+          label.append(name, owner);
+          card.appendChild(label);
+          content.appendChild(card);
+        }
+      }
+      function chatCreateMessage(message, enableTag) {
+        const item = document.createElement("article");
+        item.className = "chat-message";
+        const author = message.author || {};
+        item.appendChild(chatAuthorButton(author));
+        const content = document.createElement("div");
+        content.className = "chat-message-content";
+        const heading = document.createElement("div");
+        heading.className = "chat-author";
+        const name = document.createElement("button");
+        name.type = "button";
+        name.className = "chat-author-link";
+        name.textContent = author.name || "Usuário";
+        name.addEventListener("click", () => chatOpenProfile(author));
+        heading.appendChild(name);
+        if (enableTag && (author.memberRole === "admin" || author.memberRole === "member")) {
+          const role = document.createElement("span");
+          role.className = "chat-member-role" + (author.memberRole === "admin" ? " admin" : "");
+          role.textContent = author.memberRole === "admin" ? "Admin" : "Membro";
+          role.title = "Cargo no servidor oficial da Gnay";
+          heading.appendChild(role);
+        }
+        let tag = null;
+        if (enableTag) {
+          tag = document.createElement("span");
+          tag.className = "chat-discord-tag";
+          tag.hidden = true;
+          tag.title = "Tag do Discord";
+          heading.appendChild(tag);
+        }
+        content.appendChild(heading);
+        const date = document.createElement("time");
+        date.className = "chat-time";
+        const timestamp = new Date(message.created);
+        if (!Number.isNaN(timestamp.getTime())) {
+          date.dateTime = timestamp.toISOString();
+          date.textContent = timestamp.toLocaleString("pt-BR", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+        content.appendChild(date);
+        chatAppendMessageContent(content, message, author);
+        item.appendChild(content);
+        if (enableTag && tag) chatGuildTag(author.discordId, tag);
+        return item;
+      }
+      function chatRender(messages) {
+        const list = $("#chatMessages");
+        const signature = messages.map((message) => message.id).join(",");
+        if (signature === chatSignature) return;
+        const wasNearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 120;
+        chatSignature = signature;
+        list.replaceChildren();
+        if (!messages.length) {
+          const empty = document.createElement("p");
+          empty.className = "chat-empty";
+          empty.textContent = "Ainda não há mensagens. Comece a conversa!";
+          list.appendChild(empty);
+          return;
+        }
+        messages.forEach((message) => list.appendChild(chatCreateMessage(message, true)));
+        if (wasNearBottom) list.scrollTop = list.scrollHeight;
+      }
+      function chatSetView(view) {
+        $("#chatGeneralView").hidden = view !== "general";
+        $("#chatSocialView").hidden = view !== "social";
+        $("#chatDmView").hidden = view !== "dm";
+        $("#chatFriendsOpen").hidden = view !== "general";
+        $("#chatLive").hidden = view !== "general";
+        $("#chatPageTitle").textContent = view === "dm" ? "Conversa privada" : view === "social" ? "Amigos" : "Chat Geral";
+        $("#chatPageDescription").textContent =
+          view === "dm"
+            ? "Uma conversa particular, disponível apenas para amigos aceitos."
+            : view === "social"
+              ? "Gerencie seus pedidos e converse com seus amigos."
+              : "Converse com a comunidade. Clique em um perfil para ver opções.";
+      }
+      function chatPersonRow(entry, kind) {
+        const row = document.createElement("div");
+        row.className = "chat-person-row";
+        row.appendChild(chatAuthorButton(entry.user));
+        const name = document.createElement("button");
+        name.type = "button";
+        name.className = "chat-author-link chat-person-name";
+        name.textContent = entry.user.name || "Usuário";
+        name.addEventListener("click", () => chatOpenProfile(entry.user));
+        row.appendChild(name);
+        if (kind === "incoming") {
+          const accept = document.createElement("button");
+          accept.type = "button";
+          accept.className = "btn";
+          accept.textContent = "Aceitar";
+          accept.addEventListener("click", () => void chatRespondFriend(entry.id, "accept"));
+          const decline = document.createElement("button");
+          decline.type = "button";
+          decline.className = "btn dark";
+          decline.textContent = "Recusar";
+          decline.addEventListener("click", () => void chatRespondFriend(entry.id, "decline"));
+          row.append(accept, decline);
+        } else if (kind === "outgoing") {
+          const pending = document.createElement("span");
+          pending.className = "chat-hint";
+          pending.textContent = "Aguardando resposta";
+          row.appendChild(pending);
+        } else {
+          const open = document.createElement("button");
+          open.type = "button";
+          open.className = "btn";
+          open.innerHTML = '<span class="ms" aria-hidden="true">chat</span>Mensagem';
+          open.addEventListener("click", () => void chatOpenDm(entry));
+          row.appendChild(open);
+        }
+        return row;
+      }
+      function chatRenderPeople(element, entries, kind, emptyText) {
+        element.replaceChildren();
+        if (!entries.length) {
+          const empty = document.createElement("p");
+          empty.className = "chat-person-empty";
+          empty.textContent = emptyText;
+          element.appendChild(empty);
+          return;
+        }
+        entries.forEach((entry) => element.appendChild(chatPersonRow(entry, kind)));
+      }
+      async function chatLoadSocial() {
+        if (!S || chatSocialBusy) return;
+        chatSocialBusy = true;
+        try {
+          const result = await api("GET", "/api/chat/social");
+          chatSocial = {
+            incoming: Array.isArray(result.incoming) ? result.incoming : [],
+            outgoing: Array.isArray(result.outgoing) ? result.outgoing : [],
+            friends: Array.isArray(result.friends) ? result.friends : [],
+          };
+          chatRenderPeople($("#chatIncoming"), chatSocial.incoming, "incoming", "Nenhum pedido recebido.");
+          chatRenderPeople($("#chatOutgoing"), chatSocial.outgoing, "outgoing", "Nenhum pedido enviado.");
+          chatRenderPeople($("#chatFriends"), chatSocial.friends, "friend", "Seus amigos aceitos aparecerão aqui.");
+          $("#chatFriendCount").textContent = chatSocial.incoming.length ? "(" + chatSocial.incoming.length + ")" : "";
+          if ($("#chatSocialStatus").textContent === "Não foi possível carregar amigos.") {
+            $("#chatSocialStatus").textContent = "";
+          }
+          chatUpdateProfileAction();
+        } catch (error) {
+          $("#chatSocialStatus").textContent = error.data && error.data.error ? error.data.error : "Não foi possível carregar amigos.";
+          console.error("Falha ao carregar amigos do Chat Geral:", error);
+        } finally {
+          chatSocialBusy = false;
+        }
+      }
+      function chatProfileRelation(slug) {
+        const friend = chatSocial.friends.find((entry) => entry.user.slug === slug);
+        if (friend) return { type: "friend", entry: friend };
+        const incoming = chatSocial.incoming.find((entry) => entry.user.slug === slug);
+        if (incoming) return { type: "incoming", entry: incoming };
+        const outgoing = chatSocial.outgoing.find((entry) => entry.user.slug === slug);
+        if (outgoing) return { type: "outgoing", entry: outgoing };
+        return { type: "none", entry: null };
+      }
+      function chatUpdateProfileAction() {
+        if (!chatCurrentProfile) return;
+        const slug = chatCurrentProfile.slug;
+        const action = $("#chatFriendAction");
+        const decline = $("#chatFriendDecline");
+        const relation = chatProfileRelation(slug);
+        action.disabled = false;
+        decline.hidden = true;
+        if (slug === S) {
+          action.textContent = "Este é seu perfil";
+          action.disabled = true;
+        } else if (relation.type === "friend") action.textContent = "Abrir conversa";
+        else if (relation.type === "incoming") {
+          action.textContent = "Aceitar pedido";
+          decline.hidden = false;
+        } else if (relation.type === "outgoing") {
+          action.textContent = "Pedido enviado";
+          action.disabled = true;
+        } else action.textContent = "Adicionar pessoa";
+      }
+      function chatOpenProfile(author) {
+        if (!author || !/^[a-z0-9_-]{2,20}$/.test(author.slug || "")) return;
+        chatCurrentProfile = author;
+        const avatar = $("#chatProfileAvatar");
+        avatar.removeAttribute("src");
+        if (author.avatar) avatar.src = author.avatar;
+        avatar.onerror = () => {
+          avatar.onerror = null;
+          avatar.removeAttribute("src");
+        };
+        $("#chatProfileName").textContent = author.name || "Usuário";
+        $("#chatProfileSlug").textContent = "@" + author.slug;
+        $("#chatProfileStatus").textContent = "";
+        $("#chatVisitProfile").href = "/" + encodeURIComponent(author.slug);
+        chatUpdateProfileAction();
+        $("#chatProfileModal").hidden = false;
+      }
+      async function chatRespondFriend(requestId, action) {
+        const request = chatSocial.incoming.find((entry) => entry.id === requestId);
+        try {
+          await api("POST", "/api/chat/friends/" + encodeURIComponent(requestId) + "/respond", { action });
+          await chatLoadSocial();
+          if (action === "accept" && request) {
+            const friend = chatSocial.friends.find((entry) => entry.user.slug === request.user.slug);
+            if (friend) {
+              await chatOpenDm(friend);
+              return;
+            }
+          }
+          $("#chatProfileStatus").textContent = action === "accept" ? "Pedido aceito. A conversa privada já está disponível." : "Pedido recusado.";
+        } catch (error) {
+          $("#chatProfileStatus").textContent = error.data && error.data.error ? error.data.error : "Não foi possível atualizar o pedido.";
+          console.error("Falha ao responder pedido de amizade:", error);
+        }
+      }
+      async function chatProfileAction() {
+        if (!chatCurrentProfile || !chatCurrentProfile.slug) return;
+        const relation = chatProfileRelation(chatCurrentProfile.slug);
+        if (relation.type === "friend") {
+          $("#chatProfileModal").hidden = true;
+          await chatOpenDm(relation.entry);
+          return;
+        }
+        if (relation.type === "incoming") {
+          await chatRespondFriend(relation.entry.id, "accept");
+          return;
+        }
+        if (relation.type !== "none") return;
+        const action = $("#chatFriendAction");
+        action.disabled = true;
+        try {
+          await api("POST", "/api/chat/friends", { slug: chatCurrentProfile.slug });
+          await chatLoadSocial();
+          $("#chatProfileStatus").textContent = "Pedido de amizade enviado.";
+        } catch (error) {
+          $("#chatProfileStatus").textContent = error.data && error.data.error ? error.data.error : "Não foi possível enviar o pedido.";
+          console.error("Falha ao enviar pedido de amizade:", error);
+        } finally {
+          chatUpdateProfileAction();
+        }
+      }
+      async function chatOpenDm(friendship) {
+        if (!friendship || !friendship.id || !friendship.user) return;
+        chatCurrentFriend = friendship;
+        chatDmSignature = "";
+        $("#chatDmName").textContent = friendship.user.name || "Amigo";
+        const avatar = $("#chatDmAvatar");
+        avatar.removeAttribute("src");
+        if (friendship.user.avatar) avatar.src = friendship.user.avatar;
+        avatar.onerror = () => {
+          avatar.onerror = null;
+          avatar.removeAttribute("src");
+        };
+        $("#chatDmStatus").textContent = "Só você e seu amigo podem ver esta conversa.";
+        chatSetView("dm");
+        $("#chatProfileModal").hidden = true;
+        clearInterval(chatDmTimer);
+        chatDmTimer = 0;
+        await chatLoadDm();
+        chatDmTimer = setInterval(chatLoadDm, 5000);
+      }
+      function chatRenderDm(messages) {
+        const list = $("#chatDmMessages");
+        const signature = messages.map((message) => message.id).join(",");
+        if (signature === chatDmSignature) return;
+        const wasNearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 120;
+        chatDmSignature = signature;
+        list.replaceChildren();
+        if (!messages.length) {
+          const empty = document.createElement("p");
+          empty.className = "chat-empty";
+          empty.textContent = "Esta conversa está vazia. Envie a primeira mensagem!";
+          list.appendChild(empty);
+          return;
+        }
+        messages.forEach((message) => list.appendChild(chatCreateMessage(message, false)));
+        if (wasNearBottom) list.scrollTop = list.scrollHeight;
+      }
+      async function chatLoadDm() {
+        if (!chatCurrentFriend || chatDmBusy) return;
+        chatDmBusy = true;
+        try {
+          const result = await api("GET", "/api/chat/dm/" + encodeURIComponent(chatCurrentFriend.id));
+          chatRenderDm(Array.isArray(result.messages) ? result.messages : []);
+        } catch (error) {
+          $("#chatDmStatus").textContent = error.data && error.data.error ? error.data.error : "Não foi possível carregar esta conversa.";
+          console.error("Falha ao carregar conversa privada:", error);
+        } finally {
+          chatDmBusy = false;
+        }
+      }
+      async function chatSendDm(payload) {
+        if (!chatCurrentFriend) return;
+        try {
+          await api("POST", "/api/chat/dm/" + encodeURIComponent(chatCurrentFriend.id), payload);
+          $("#chatDmInput").value = "";
+          $("#chatDmStatus").textContent = "Mensagem enviada.";
+          await chatLoadDm();
+        } catch (error) {
+          $("#chatDmStatus").textContent = error.data && error.data.error ? error.data.error : "Não foi possível enviar a mensagem.";
+          console.error("Falha ao enviar mensagem privada:", error);
+        }
+      }
+      async function chatUnfriend() {
+        if (!chatCurrentFriend || !confirm("Desfazer esta amizade e apagar o histórico desta conversa?")) return;
+        try {
+          await api("DELETE", "/api/chat/friends/" + encodeURIComponent(chatCurrentFriend.id));
+          chatCurrentFriend = null;
+          clearInterval(chatDmTimer);
+          chatDmTimer = 0;
+          await chatLoadSocial();
+          chatSetView("social");
+        } catch (error) {
+          $("#chatDmStatus").textContent = error.data && error.data.error ? error.data.error : "Não foi possível desfazer a amizade.";
+          console.error("Falha ao desfazer amizade:", error);
+        }
+      }
+      function chatBuildStickerPicker(element, target) {
+        element.replaceChildren();
+        chatStickers.forEach((sticker) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "chat-sticker-option";
+          const emoji = document.createElement("span");
+          emoji.textContent = sticker.emoji;
+          const label = document.createElement("span");
+          label.textContent = sticker.name;
+          button.append(emoji, label);
+          button.addEventListener("click", () => {
+            element.hidden = true;
+            if (target === "dm") void chatSendDm({ type: "sticker", sticker: sticker.id });
+            else void chatSendSticker(sticker.id);
+          });
+          element.appendChild(button);
+        });
+      }
+      async function chatSendSticker(sticker) {
+        try {
+          await api("POST", "/api/chat/messages", { type: "sticker", sticker });
+          await chatLoad();
+          chatStatus("Figurinha enviada.");
+        } catch (error) {
+          chatStatus(error.data && error.data.error ? error.data.error : "Não foi possível enviar a figurinha.");
+          console.error("Falha ao enviar figurinha no Chat Geral:", error);
+        }
+      }
+      async function chatOpenTemplatePicker() {
+        $("#chatTemplateList").replaceChildren();
+        $("#chatTemplateStatus").textContent = "Carregando templates públicos...";
+        $("#chatTemplateModal").hidden = false;
+        try {
+          const result = await api("GET", "/api/templates?tab=library&sort=recent");
+          const templates = Array.isArray(result.templates) ? result.templates : [];
+          const list = $("#chatTemplateList");
+          list.replaceChildren();
+          if (!templates.length) {
+            $("#chatTemplateStatus").textContent = "Não há templates públicos disponíveis para enviar.";
+            return;
+          }
+          templates.forEach((template) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "chat-template-option";
+            if (typeof template.preview === "string" && (/^https:\/\//i.test(template.preview) || /^\/uploads\//i.test(template.preview))) {
+              const image = document.createElement("img");
+              image.src = template.preview;
+              image.alt = "";
+              image.loading = "lazy";
+              button.appendChild(image);
+            }
+            const label = document.createElement("span");
+            label.textContent = template.name + " · @" + ((template.owner && template.owner.slug) || "gnay");
+            button.appendChild(label);
+            button.addEventListener("click", async () => {
+              await chatSendDm({ type: "template", templateId: String(template.id) });
+              $("#chatTemplateModal").hidden = true;
+            });
+            list.appendChild(button);
+          });
+          $("#chatTemplateStatus").textContent = "";
+        } catch (error) {
+          $("#chatTemplateStatus").textContent = error.data && error.data.error ? error.data.error : "Não foi possível carregar templates.";
+          console.error("Falha ao carregar templates para compartilhar:", error);
+        }
+      }
+      async function chatLoad() {
+        if (!S || chatBusy) return;
+        chatBusy = true;
+        try {
+          const result = await api("GET", "/api/chat/messages");
+          chatRender(Array.isArray(result.messages) ? result.messages : []);
+          if ($("#chatStatus").textContent === "Não foi possível carregar o chat.") {
+            chatStatus("Até 1000 caracteres · Áudio até 10 MB");
+          }
+        } catch (error) {
+          chatStatus(error.status === 401 ? "Entre novamente pelo Discord para usar o chat." : "Não foi possível carregar o chat.");
+          console.error("Falha ao carregar o Chat Geral:", error);
+        } finally {
+          chatBusy = false;
+        }
+      }
+      async function chatSendText(text) {
+        try {
+          await flushProfileTemplateSync();
+          await api("POST", "/api/chat/messages", { text });
+          $("#chatInput").value = "";
+          await chatLoad();
+          chatStatus("Mensagem enviada.");
+        } catch (error) {
+          chatStatus(error.data && error.data.error ? error.data.error : "Não foi possível enviar a mensagem.");
+          console.error("Falha ao enviar mensagem no Chat Geral:", error);
+        }
+      }
+      async function chatUploadAudio(blob) {
+        const text = $("#chatInput").value.trim();
+        if (!blob.size || blob.size > 10 * 1024 * 1024) {
+          chatStatus("O áudio deve ter no máximo 10 MB. Grave um trecho menor.");
+          return;
+        }
+        chatStatus("Enviando áudio...");
+        try {
+          await flushProfileTemplateSync();
+          const response = await fetch("/api/chat/audio?text=" + encodeURIComponent(text), {
+            method: "POST",
+            headers: {
+              "content-type": blob.type || "audio/webm",
+              "x-requested-with": "fetch",
+              "x-account": S,
+            },
+            credentials: "same-origin",
+            body: blob,
+          });
+          let result = {};
+          try {
+            result = await response.json();
+          } catch (error) {
+            throw new Error("O servidor respondeu com um formato inválido.");
+          }
+          if (!response.ok) {
+            const failure = new Error(result.error || "Não foi possível enviar o áudio.");
+            failure.status = response.status;
+            throw failure;
+          }
+          $("#chatInput").value = "";
+          chatStatus("Áudio enviado.");
+          await chatLoad();
+        } catch (error) {
+          chatStatus(error.message || "Não foi possível enviar o áudio.");
+          console.error("Falha ao enviar áudio no Chat Geral:", error);
+        }
+      }
+      async function chatStartRecording() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+          chatStatus("Seu navegador não permite gravar áudio aqui.");
+          return;
+        }
+        try {
+          chatStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const preferred =
+            typeof MediaRecorder.isTypeSupported === "function"
+              ? ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].find((type) =>
+                  MediaRecorder.isTypeSupported(type),
+                )
+              : "";
+          chatRecorder = preferred ? new MediaRecorder(chatStream, { mimeType: preferred }) : new MediaRecorder(chatStream);
+          chatChunks = [];
+          chatDiscardRecording = false;
+          chatRecorder.ondataavailable = (event) => {
+            if (event.data.size) chatChunks.push(event.data);
+          };
+          chatRecorder.onstop = () => {
+            const recorder = chatRecorder;
+            const blob = new Blob(chatChunks, { type: (recorder && recorder.mimeType) || "audio/webm" });
+            chatChunks = [];
+            chatRecorder = null;
+            if (chatStream) chatStream.getTracks().forEach((track) => track.stop());
+            chatStream = null;
+            $("#chatRecord").hidden = false;
+            $("#chatStop").hidden = true;
+            if (chatDiscardRecording) {
+              chatDiscardRecording = false;
+              return;
+            }
+            void chatUploadAudio(blob);
+          };
+          chatRecorder.start(1000);
+          $("#chatRecord").hidden = true;
+          $("#chatStop").hidden = false;
+          chatStatus("Gravando… pare antes de enviar. Limite de 10 MB.");
+        } catch (error) {
+          if (chatStream) chatStream.getTracks().forEach((track) => track.stop());
+          chatStream = null;
+          chatStatus("Não foi possível acessar o microfone. Verifique a permissão do navegador.");
+          console.error("Falha ao iniciar a gravação do Chat Geral:", error);
+        }
+      }
+      function chatStopRecording(discard) {
+        if (!chatRecorder) return;
+        chatDiscardRecording = discard === true;
+        if (chatRecorder.state !== "inactive") chatRecorder.stop();
+      }
+      function chatStop() {
+        clearInterval(chatTimer);
+        clearInterval(chatSocialTimer);
+        clearInterval(chatDmTimer);
+        chatTimer = 0;
+        chatSocialTimer = 0;
+        chatDmTimer = 0;
+        if (chatRecorder) chatStopRecording(true);
+      }
+      function chatInit() {
+        if (!chatBound) {
+          chatBound = true;
+          chatBuildStickerPicker($("#chatStickerPicker"), "general");
+          chatBuildStickerPicker($("#chatDmStickerPicker"), "dm");
+          $("#chatForm").addEventListener("submit", (event) => {
+            event.preventDefault();
+            const text = $("#chatInput").value.trim();
+            if (!text) {
+              chatStatus("Digite uma mensagem antes de enviar.");
+              return;
+            }
+            void chatSendText(text);
+          });
+          $("#chatInput").addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              $("#chatForm").requestSubmit();
+            }
+          });
+          $("#chatRecord").addEventListener("click", () => void chatStartRecording());
+          $("#chatStop").addEventListener("click", () => chatStopRecording(false));
+          $("#chatFriendsOpen").addEventListener("click", () => {
+            chatSetView("social");
+            void chatLoadSocial();
+          });
+          $("#chatSocialBack").addEventListener("click", () => {
+            chatSetView("general");
+            void chatLoad();
+          });
+          $("#chatDmBack").addEventListener("click", () => {
+            clearInterval(chatDmTimer);
+            chatDmTimer = 0;
+            chatCurrentFriend = null;
+            chatSetView("general");
+            void chatLoad();
+          });
+          $("#chatStickerOpen").addEventListener("click", (event) => {
+            const picker = $("#chatStickerPicker");
+            picker.hidden = !picker.hidden;
+            event.currentTarget.setAttribute("aria-expanded", String(!picker.hidden));
+          });
+          $("#chatDmStickerOpen").addEventListener("click", (event) => {
+            const picker = $("#chatDmStickerPicker");
+            picker.hidden = !picker.hidden;
+            event.currentTarget.setAttribute("aria-expanded", String(!picker.hidden));
+          });
+          $("#chatDmForm").addEventListener("submit", (event) => {
+            event.preventDefault();
+            const text = $("#chatDmInput").value.trim();
+            if (!text) {
+              $("#chatDmStatus").textContent = "Digite uma mensagem antes de enviar.";
+              return;
+            }
+            void chatSendDm({ text });
+          });
+          $("#chatDmInput").addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              $("#chatDmForm").requestSubmit();
+            }
+          });
+          $("#chatSendTemplate").addEventListener("click", () => void chatOpenTemplatePicker());
+          $("#chatUnfriend").addEventListener("click", () => void chatUnfriend());
+          $("#chatFriendAction").addEventListener("click", () => void chatProfileAction());
+          $("#chatFriendDecline").addEventListener("click", async () => {
+            if (!chatCurrentProfile) return;
+            const relation = chatProfileRelation(chatCurrentProfile.slug);
+            if (relation.type === "incoming") await chatRespondFriend(relation.entry.id, "decline");
+          });
+          $$("[data-chat-modal-close]").forEach((button) => {
+            button.addEventListener("click", () => {
+              const modal = button.closest(".chat-modal");
+              if (modal) modal.hidden = true;
+            });
+          });
+          document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+              $("#chatProfileModal").hidden = true;
+              $("#chatTemplateModal").hidden = true;
+            }
+          });
+        }
+        if (!chatTimer) {
+          chatSetView("general");
+          void chatLoad();
+          chatTimer = setInterval(chatLoad, 5000);
+          void chatLoadSocial();
+          chatSocialTimer = setInterval(chatLoadSocial, 15000);
+        }
+      }
+
       function route() {
         document.documentElement.classList.remove("bp");
         const h = getH();
@@ -10099,6 +11491,7 @@
             "conexoes",
             "config",
             "modelos",
+            "chat",
             "perfil",
             "layout",
             "customizacao",
@@ -10125,6 +11518,7 @@
           pz = h === "personalizar",
           bd = h === "badges",
           md = h === "modelos",
+          chat = h === "chat",
           cf = h === "config",
           tp = false,
           pr = h === "precos" || h === "recursos",
@@ -10135,7 +11529,7 @@
         document.documentElement.classList.toggle("bp", !!prof);
         $("#v-home").classList.toggle(
           "on",
-          !dash && !st && !lk && !pz && !bd && !md && !cf && !tp && !pr && !pf && !ly && !cz && !lg && !prof,
+          !dash && !st && !lk && !pz && !bd && !md && !chat && !cf && !tp && !pr && !pf && !ly && !cz && !lg && !prof,
         );
         $("#v-cz").classList.toggle("on", cz);
         $("#v-login").classList.toggle("on", lg);
@@ -10145,7 +11539,7 @@
         $("#s-pf").classList.toggle("cur", pf);
         $("#s-ct").classList.toggle("cur", dash || st || bd || cf);
         $("#s-ly").classList.toggle("cur", ly);
-        document.body.classList.toggle("app", !!S && (dash || st || lk || pz || bd || md || cf || pf || ly));
+        document.body.classList.toggle("app", !!S && (dash || st || lk || pz || bd || md || chat || cf || pf || ly));
         $("#vpBtn").style.display = S && (lk || pz || pf || ly) ? "" : "none";
         $("#v-prices").classList.toggle("on", pr);
         $("#v-prof").classList.toggle("on", !!prof);
@@ -10169,6 +11563,10 @@
         $("#v-mod").classList.toggle("on", md);
         $("#s-md").classList.toggle("cur", md);
         if (md && S) mdInit();
+        $("#v-chat").classList.toggle("on", chat);
+        $("#s-chat").classList.toggle("cur", chat);
+        if (chat && S) chatInit();
+        else chatStop();
         $("#v-cfg").classList.toggle("on", cf);
         $("#s-bd").classList.toggle("cur", bd);
         $("#s-cf").classList.toggle("cur", cf);
@@ -10182,7 +11580,7 @@
         $("#s-st").classList.toggle("cur", st);
         side(false);
         $$(".menu").forEach((m) => m.classList.remove("open"));
-        if (dash || st || lk || pz || bd || md || cf || tp || pf || ly || cz || lg || prof) scrollTo(0, 0);
+        if (dash || st || lk || pz || bd || md || chat || cf || tp || pf || ly || cz || lg || prof) scrollTo(0, 0);
         else if (h && !prof && document.getElementById(h)) document.getElementById(h).scrollIntoView();
       }
       function side(o) {
@@ -10731,6 +12129,7 @@
         "badges",
         "conexoes",
         "config",
+        "chat",
         "precos",
         "faq",
         "home",
@@ -10822,7 +12221,8 @@
           location.hostname === "localhost" ||
           location.hostname === "127.0.0.1"
         ) {
-          const target = location.pathname + (x ? "#" + x : "");
+          const localBase = location.protocol === "file:" ? location.pathname : "/";
+          const target = localBase + (x ? "#" + x : "");
           if (target !== location.pathname + location.hash || location.search) {
             history[rep ? "replaceState" : "pushState"](null, "", target);
           }
@@ -12716,10 +14116,11 @@
       function mdCard(t) {
         const c = mdEl("article", "mdc"),
           pv = mdEl("div", "mdp");
+        c.dataset.templateId = String(t.id);
         if (t.preview && /\.gif$/i.test(t.preview)) mdGifPoster(pv, t.preview, t.name);
         else if (t.preview) {
           const im = new Image();
-          im.src = t.preview;
+          im.src = mdPreviewCache.get(String(t.id)) || t.preview;
           im.alt = "Prévia de " + t.name;
           im.loading = "lazy";
           im.decoding = "async";
@@ -12862,16 +14263,12 @@
         dialog({
           t: 'Usar "' + t.name + '"',
           s:
-            "Isso troca plano de fundo, cores, efeitos e layout do seu perfil pelos deste template. Por padrão seus links, bio, avatar e áudios não mudam." +
-            (t.audio ? " O áudio do template será adicionado à sua lista, se houver espaço." : ""),
-          html: '<label style="display:flex;gap:12px;align-items:flex-start;margin-top:14px;font-size:19px;line-height:1.35;cursor:pointer"><input type="checkbox" id="mdFull" checked style="width:24px;height:24px;margin-top:2px;flex:none"><span>Usar também os textos, links, avatar e músicas deste template. Isso substituirá esses dados do seu perfil.</span></label>',
+            "Isso aplica o visual, as cores e o layout do template. Seu nome, bio, links, avatar e músicas serão mantidos; os efeitos de texto do template serão aplicados à sua bio.",
           ok: "Usar template",
           fn: async () => {
             try {
-              const full = !!($("#mdFull") && $("#mdFull").checked);
-              clearTimeout(syncT);
-              syncT = 0;
-              const r = await api("POST", "/api/templates/" + t.id + "/use", { full });
+              await flushProfileTemplateSync();
+              const r = await api("POST", "/api/templates/" + t.id + "/use");
               P = r.profile || {};
               saveLocal();
               refresh();
@@ -12904,6 +14301,25 @@
           return;
         }
         const Q = (j.template && j.template.profile) || {};
+        if (!/\.gif$/i.test(t.preview || "")) {
+          try {
+            let preview = mdPreviewCache.get(String(t.id));
+            if (!preview) {
+              const blob = await mdAutoPrev(Q);
+              if (blob) {
+                preview = URL.createObjectURL(blob);
+                mdPreviewCache.set(String(t.id), preview);
+              }
+            }
+            if (preview) {
+              const card = [...document.querySelectorAll(".mdc")].find((item) => item.dataset.templateId === String(t.id));
+              const image = card && card.querySelector(".mdp > img");
+              if (image) image.src = preview;
+            }
+          } catch (error) {
+            console.warn("Não foi possível atualizar a miniatura do template:", error);
+          }
+        }
         if (t.audio && !(Q.audios || []).length) {
           Q.audios = [{ id: "ta", t: t.name, src: t.audio, d: 0 }];
           Q.act = "ta";
@@ -13068,6 +14484,7 @@
         i.value = "";
         mdTagsDraw();
       }
+      const mdPreviewCache = new Map();
       let mdPrevBlob = null,
         mdAudF = null,
         mdAudUrl = "",
@@ -13098,24 +14515,141 @@
           dh = im.naturalHeight * k;
         x.drawImage(im, a + (w - dw) / 2, b + (h - dh) / 2, dw, dh);
       }
-      function mdWrap(x, t, mw, max) {
-        const w = String(t || "")
-            .split(/\s+/)
-            .filter(Boolean),
-          L = [];
-        let c = "";
-        for (const k of w) {
-          const n = c ? c + " " + k : k;
-          if (x.measureText(n).width > mw && c) {
-            L.push(c);
-            c = k;
-            if (L.length === max) break;
-          } else c = n;
+      function mdDrawBio(x, text, center, top, maxWidth, maxLines) {
+        let style = { bold: false, italic: false, underline: false, strike: false, glow: false, color: "", colors: null };
+        const stack = [],
+          lines = [{ runs: [], width: 0 }];
+        let word = [],
+          space = "",
+          truncated = false;
+        const font = (value) =>
+          (value.italic ? "italic " : "") +
+          (value.bold ? "700 " : "400 ") +
+          "24px Outfit,system-ui,sans-serif";
+        const measure = (run) => {
+          x.font = font(run.style);
+          return x.measureText(run.text).width;
+        };
+        const addRun = (runs, value, current) => {
+          if (!value) return;
+          const previous = runs[runs.length - 1];
+          if (previous && JSON.stringify(previous.style) === JSON.stringify(current)) previous.text += value;
+          else runs.push({ text: value, style: { ...current } });
+        };
+        const flushWord = () => {
+          if (!word.length || truncated) return;
+          const width = word.reduce((sum, run) => sum + measure(run), 0);
+          let line = lines[lines.length - 1];
+          const gapRun = { text: space, style: word[0].style };
+          const gapWidth = line.runs.length ? measure(gapRun) : 0;
+          if (line.runs.length && line.width + gapWidth + width > maxWidth) {
+            if (lines.length >= maxLines) {
+              truncated = true;
+              word = [];
+              space = "";
+              return;
+            }
+            line = { runs: [], width: 0 };
+            lines.push(line);
+          } else if (gapWidth) {
+            addRun(line.runs, space, word[0].style);
+            line.width += gapWidth;
+          }
+          word.forEach((run) => {
+            addRun(line.runs, run.text, run.style);
+            line.width += measure(run);
+          });
+          word = [];
+          space = "";
+        };
+        const addText = (value) => {
+          for (const part of value.match(/\n|[^\S\n]+|[^\s]+/g) || []) {
+            if (part === "\n") {
+              flushWord();
+              if (!truncated) {
+                if (lines.length >= maxLines) truncated = true;
+                else lines.push({ runs: [], width: 0 });
+              }
+            } else if (/^\s+$/.test(part)) {
+              flushWord();
+              if (lines[lines.length - 1].runs.length) space = part;
+            } else addRun(word, part, style);
+          }
+        };
+        const re = /\[(\/?)(b|i|u|s|glow|rainbow|shake|c(?:=#[0-9a-fA-F]{3,8})?|rgb(?:=#[0-9a-fA-F]{6},#[0-9a-fA-F]{6})?)\]/g;
+        let last = 0,
+          match;
+        while ((match = re.exec(String(text || "")))) {
+          addText(String(text).slice(last, match.index));
+          last = re.lastIndex;
+          const tag = match[2].split("=")[0];
+          if (match[1]) {
+            const index = stack.map((item) => item.tag).lastIndexOf(tag);
+            if (index >= 0) {
+              style = stack[index].previous;
+              stack.length = index;
+            }
+            continue;
+          }
+          stack.push({ tag, previous: style });
+          style = { ...style };
+          if (tag === "b") style.bold = true;
+          else if (tag === "i") style.italic = true;
+          else if (tag === "u") style.underline = true;
+          else if (tag === "s") style.strike = true;
+          else if (tag === "glow") style.glow = true;
+          else if (tag === "rainbow") style.colors = ["#ff5252", "#ffca28", "#66bb6a", "#29b6f6", "#ab47bc"];
+          else if (tag === "rgb") style.colors = match[2].match(/#[0-9a-fA-F]{6}/g);
+          else if (tag === "c" && match[2].includes("=")) style.color = match[2].slice(2);
         }
-        if (L.length < max && c) L.push(c);
-        if (L.length === max && w.join(" ").length > L.join(" ").length)
-          L[max - 1] = L[max - 1].replace(/.{0,2}$/, "…");
-        return L;
+        addText(String(text || "").slice(last));
+        flushWord();
+        if (truncated) {
+          const line = lines[lines.length - 1];
+          const ellipsis = { text: "…", style: line.runs.length ? line.runs[line.runs.length - 1].style : style };
+          while (line.runs.length && line.width + measure(ellipsis) > maxWidth) {
+            const run = line.runs[line.runs.length - 1];
+            const chars = Array.from(run.text);
+            chars.pop();
+            line.width -= measure(run);
+            run.text = chars.join("");
+            if (!run.text) line.runs.pop();
+            else line.width += measure(run);
+          }
+          if (line.width + measure(ellipsis) <= maxWidth) {
+            addRun(line.runs, ellipsis.text, ellipsis.style);
+            line.width += measure(ellipsis);
+          }
+        }
+        lines.forEach((line, index) => {
+          let px = center - line.width / 2;
+          const baseline = top + index * 32;
+          line.runs.forEach((run) => {
+            const width = measure(run),
+              colors = run.style.colors;
+            x.save();
+            x.globalAlpha = 1;
+            x.fillStyle = run.style.color || "#ffffff";
+            if (colors && colors.length) {
+              const gradient = x.createLinearGradient(px, 0, px + Math.max(width, 1), 0);
+              colors.forEach((color, colorIndex) => gradient.addColorStop(colorIndex / Math.max(colors.length - 1, 1), color));
+              x.fillStyle = gradient;
+            }
+            if (run.style.glow) {
+              x.shadowColor = x.fillStyle;
+              x.shadowBlur = 10;
+            }
+            x.font = font(run.style);
+            x.textAlign = "left";
+            x.fillText(run.text, px, baseline);
+            if (run.style.underline || run.style.strike) {
+              x.fillRect(px, baseline + (run.style.underline ? 3 : -8), width, 1.5);
+            }
+            x.restore();
+            px += width;
+          });
+        });
+        return lines.length;
       }
       async function mdAutoPrev(Q, safe) {
         Q = Q || {};
@@ -13147,9 +14681,10 @@
         x.fillRect(0, 0, W, H);
         const links = (Q.links || []).length,
           desc = String(Q.desc || "").trim(),
+          visibleDesc = desc.replace(/\[(?:\/?(?:b|i|u|s|glow|rainbow|shake)|c(?:=#[0-9a-fA-F]{3,8})?|rgb(?:=#[0-9a-fA-F]{6},#[0-9a-fA-F]{6})?)\]/g, "").trim(),
           name = String(Q.dn || "seu nome").slice(0, 24);
         const cw = 430,
-          ch = desc ? 440 : 400,
+          ch = visibleDesc ? 440 : 400,
           cx = (W - cw) / 2,
           cy = (H - ch) / 2;
         mdRR(x, cx, cy, cw, ch, 38);
@@ -13182,12 +14717,9 @@
         x.font = "700 44px Outfit,system-ui,sans-serif";
         x.fillText(name, W / 2, ay + r + 58);
         let y = ay + r + 58;
-        if (desc) {
-          x.font = "400 24px Outfit,system-ui,sans-serif";
-          x.globalAlpha = 0.78;
-          mdWrap(x, desc, cw - 70, 2).forEach((l, i) => x.fillText(l, W / 2, y + 42 + i * 32));
-          x.globalAlpha = 1;
-          y += 42 + 32;
+        if (visibleDesc) {
+          const lineCount = mdDrawBio(x, desc, W / 2, y + 42, cw - 70, 2);
+          y += 42 + Math.max(1, lineCount) * 32;
         }
         const n = Math.max(3, Math.min(5, links || 3)),
           sz = 54,
@@ -13799,12 +15331,14 @@
         c.className = "pfc ly-" + (Q.ly || "vidro");
         c.style.setProperty("--ac", ac);
         if (Q.ly !== "centro") gls(c);
-        if (Q.shCard || GL.p)
-          c.style.boxShadow =
-            (Q.shCard ? "0 10px 70px rgba(0,0,0,.65)" : "") +
-            (Q.shCard && GL.p ? "," : "") +
-            (GL.p ? "0 0 32px " + glc : "");
-        if (Q.tg && Q.tg["Borda do card"]) c.style.border = "1px solid rgba(255,255,255,.2)";
+        const cardGlowColor = /^#[\da-f]{6}$/i.test(Q.cardGlowColor || "") ? Q.cardGlowColor : "#ffffff";
+        const cardShadows = [];
+        if (Q.shCard) cardShadows.push("0 10px 70px rgba(0,0,0,.65)");
+        if (GL.p) cardShadows.push("0 0 32px " + glc);
+        if (Q.cardGlow) cardShadows.push("0 0 12px " + cardGlowColor + ",0 0 34px " + cardGlowColor + "88");
+        if (cardShadows.length) c.style.boxShadow = cardShadows.join(",");
+        if (Q.cardGlow) c.style.border = "1px solid " + cardGlowColor;
+        else if (Q.tg && Q.tg["Borda do card"]) c.style.border = "1px solid rgba(255,255,255,.2)";
         const hd = document.createElement("div");
         hd.className = "pfh";
         const discordAvatar =
@@ -13865,7 +15399,12 @@
         tb.className = "pft";
         const nm = document.createElement("h1");
         profileName(nm, Q.dn || ow, Q.nameFx);
-        if (GL.u) nm.style.textShadow = "0 0 10px " + glc + ",0 0 28px " + glc;
+        const nameColor = /^#[\da-f]{6}$/i.test(Q.nameColor || "") ? Q.nameColor : "";
+        if (nameColor) nm.style.color = nameColor;
+        if (GL.u || Q.nameGlow) {
+          const glowColor = Q.nameGlow && nameColor ? nameColor : glc;
+          nm.style.textShadow = "0 0 10px " + glowColor + ",0 0 28px " + glowColor;
+        }
         const ob = bdSort(
           ownedB(ow).filter((n) => !(Q.bdHide || []).includes(n)),
           Q.bdOrdS,
@@ -16138,9 +17677,8 @@
           [...value].forEach((char, index) => {
             const letter = document.createElement("span");
             letter.textContent = char === " " ? "\u00a0" : char;
-            const duration = 2.4 + (index % 5) * 0.16;
-            letter.style.animationDuration = duration + "s";
-            letter.style.animationDelay = -((index * 0.37) % duration) + "s";
+            letter.style.animationDuration = "1.8s";
+            letter.style.animationDelay = -(index * 0.11) + "s";
             el.appendChild(letter);
           });
           return;
@@ -16354,6 +17892,8 @@
                 ["wave", "Ondas"],
                 ["hacker", "Hacker"],
               ]) +
+              '<span class="lb">Cor do nome (também no Hacker)</span><input class="czs" type="color" data-k="nameColor" data-d="#ffffff" aria-label="Cor do nome" title="Cor do nome" style="width:100%;height:56px;padding:6px">' +
+              TG("Brilho do nome", "nameGlow") +
               '<span class="lb">Bio</span><div class="bwrap"><div class="tbr" id="bioT"><button type="button" data-w="b" title="Negrito">B</button><button type="button" data-w="i" title="Itálico">I</button><button type="button" data-w="u" title="Sublinhado">U</button><button type="button" data-w="s" title="Riscado">S</button><button type="button" data-w="glow" title="Brilho">Brilho</button><button type="button" data-w="rainbow" class="rnb" title="Arco-íris RGB animado">Arco-íris</button><button type="button" data-w="shake" title="Tremer">Tremer</button><input type="color" id="bioC" value="#ff4d4d" aria-label="Cor do texto" title="Cor"><input type="color" class="bioC1" value="#00eaff" aria-label="Primeira cor do RGB" title="Primeira cor do RGB"><input type="color" class="bioC2" value="#ff38d1" aria-label="Segunda cor do RGB" title="Segunda cor do RGB"><button type="button" class="bioRgbApply" title="Aplicar gradiente animado com as duas cores">2 cores</button><button type="button" id="bioL">Limpar</button></div><textarea id="bioTa" data-k="desc" maxlength="300" placeholder="Fale um pouco sobre você..."></textarea></div><div style="display:flex;justify-content:space-between;color:var(--mu);font-size:17px;margin:10px 4px 0"><span>Selecione um trecho e clique no estilo.</span><span id="bioN">0 letras</span></div>',
           ) +
           H("Meus templates", "Salve várias versões privadas do seu perfil para usar depois.") +
@@ -16487,7 +18027,13 @@
               TG("Data de entrada", "showJoin"),
           ) +
           '<div style="height:14px"></div>' +
-          CB(CH("person", "Sombras") + TG("Sombra do avatar", "shAv") + TG("Sombra do card", "shCard")),
+          CB(
+            CH("person", "Sombras e brilho") +
+              TG("Sombra do avatar", "shAv") +
+              TG("Sombra do card", "shCard") +
+              TG("Brilho da borda do card", "cardGlow") +
+              '<span class="lb">Cor do brilho da borda</span><input class="czs" type="color" data-k="cardGlowColor" data-d="#ffffff" aria-label="Cor do brilho da borda do card" title="Cor do brilho da borda do card" style="width:100%;height:56px;padding:6px">',
+          ),
       );
       $$("#lyg .lyo").forEach(
         (b) =>

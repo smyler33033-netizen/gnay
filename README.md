@@ -5,17 +5,19 @@ Este projeto usa um servidor local para login pelo Discord e para salvar perfis 
 ## Configurar o login Discord
 
 1. No Discord Developer Portal, crie uma aplicação e abra **OAuth2**. O login solicita apenas o escopo `identify`. O escopo `identify.premium` é restrito a aplicações aprovadas pelo Discord e não é necessário para entrar.
-2. Adicione este Redirect URI, exatamente como está:
+2. Adicione estes Redirect URIs, exatamente como estão:
    `http://localhost:8765/auth/discord/callback`
+   `https://gnay.netlify.app/auth/discord/callback`
 3. Copie `.env.example` para `.env` e preencha Client ID e Client Secret. O arquivo fica local e é ignorado pelo Git:
 
    ```env
    DISCORD_CLIENT_ID=seu_client_id
    DISCORD_CLIENT_SECRET=seu_client_secret
+   DISCORD_BOT_TOKEN=token_secreto_do_bot
    DISCORD_REDIRECT_URI=http://localhost:8765/auth/discord/callback
    ```
 
-   Não compartilhe o Client Secret. O arquivo `.env` é ignorado pelo Git.
+   `DISCORD_BOT_TOKEN` é necessário apenas para mostrar os cargos do servidor no Chat Geral. Nunca coloque esse token no HTML nem o compartilhe; configure-o como variável secreta no Render e mantenha o bot no servidor oficial.
 
 ## Executar
 
@@ -31,7 +33,7 @@ As contas e perfis ficam em `data/store.json`; uploads locais ficam em `uploads/
 
 ## Preparar backend de teste no Render
 
-O arquivo `render.yaml` configura o servidor Node como serviço gratuito para testes. No Render, crie um **Blueprint** a partir de um repositório contendo este projeto e preencha `DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET` como variáveis secretas. A aplicação Discord deve ter este Redirect URI:
+O arquivo `render.yaml` configura o servidor Node como serviço gratuito para testes. No Render, crie um **Blueprint** a partir de um repositório contendo este projeto e preencha `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` e `DISCORD_BOT_TOKEN` como variáveis secretas. A aplicação Discord deve ter este Redirect URI:
 
 `https://gnay.netlify.app/auth/discord/callback`
 
@@ -43,7 +45,27 @@ Se o site informar que o Discord não autorizou o login, confira se o fluxo foi 
 
 ## Templates da comunidade
 
-Criar um template salva uma cópia da bio atual, incluindo visual, textos, cores, fundo, links e músicas. A visibilidade começa como pública; ao aplicar um template, a opção de copiar o perfil completo (incluindo texto e músicas) vem selecionada e pode ser desmarcada para preservar os dados atuais. Métricas e o ID do Discord não são publicados na cópia. Criar, listar, editar, favoritar, excluir e usar templates depende das rotas `/api/templates` do `server.js`. Os templates e favoritos são gravados em `data/store.json`; publique as alterações do backend no Render e do frontend no Netlify para ativar esse recurso no site. O armazenamento local do plano gratuito do Render pode ser apagado quando o serviço reinicia.
+Criar um template salva uma cópia da bio atual, incluindo visual, textos, cores, fundo, links e músicas. Ao aplicar um template, o nome, o texto da bio, os links, o avatar e as músicas da pessoa são preservados; somente os efeitos de formatação da bio do template são aplicados ao texto da bio atual. Métricas e o ID do Discord não são publicados na cópia. Criar, listar, editar, favoritar, excluir e usar templates depende das rotas `/api/templates` do `server.js`. Os templates e favoritos são gravados em `data/store.json`; publique as alterações do backend no Render e do frontend no Netlify para ativar esse recurso no site. O armazenamento local do plano gratuito do Render pode ser apagado quando o serviço reinicia.
+
+## Cores e brilhos do perfil
+
+Cada perfil pode escolher individualmente a cor do nome (inclusive no efeito Hacker), ativar o brilho do nome e ativar um brilho colorido na borda do card. A animação Ondas usa um ritmo contínuo entre as letras e respeita a preferência do navegador por movimento reduzido.
+
+## Chat Geral
+
+O Chat Geral exige login pelo Discord para ler e enviar mensagens. Mensagens de texto, figurinhas próprias do Gnay e os 100 envios mais recentes ficam em `data/store.json`; áudios gravados no navegador são limitados a 10 MB e ficam em `data/chat-audio` enquanto a mensagem permanecer na lista. O servidor só entrega esses áudios a sessões autenticadas. Cada mensagem mostra nome, data, avatar e um painel de perfil com link para a bio e ações de amizade.
+
+Pedidos de amizade podem ser aceitos ou recusados. As DMs só são autorizadas pelo backend enquanto os dois usuários forem amigos; desfazer a amizade apaga o histórico da conversa. Cada conversa mantém no máximo 100 mensagens. É possível compartilhar por DM somente links de templates públicos, sem copiar os dados privados do template. As figurinhas atuais são um conjunto integrado ao Gnay; obter automaticamente as figurinhas dos servidores Discord exigiria um bot com acesso e configuração próprios, não disponíveis pelo login OAuth atual.
+
+Amizades, pedidos pendentes e mensagens privadas são armazenados em `data/store.json`. Publique `server.js` no Render e `index.html` no Netlify para ativar o recurso. O armazenamento local do plano gratuito do Render pode ser apagado quando o serviço reinicia.
+
+### Cargos do servidor no chat
+
+Para consultar os cargos, configure `DISCORD_BOT_TOKEN` no `.env` local e como variável secreta no Render. O bot precisa estar no servidor `1558728880309665845`, ter acesso à lista de membros e a intenção privilegiada **Server Members Intent** habilitada no Discord Developer Portal. No chat, usuários com o cargo `1558728880628441135` aparecem como **Membro**. Quem tiver qualquer um dos cargos `1558728880695681106`, `1559579048609583136`, `1560406584998236160` ou `1558728880683089999` aparece como **Admin** (prioridade sobre Membro). A consulta é feita pelo backend e armazenada em cache por cinco minutos.
+
+### Cópia privada para testar
+
+`local-test/index.html` é uma cópia da página atualmente hospedada para testes. Inicie o servidor isolado com `node server.local-test.js` e abra <http://localhost:8766/local-test>. A cópia entra automaticamente como **Visitante de teste**, sem OAuth do Discord. Os perfis, templates, mensagens e uploads de teste ficam separados em `data/local-test/` e `uploads/local-test/`; não são misturados aos dados do servidor local normal. Esse modo só escuta em `127.0.0.1`, e o endpoint de sessão fictícia só existe nele. O `netlify.toml` também bloqueia `/local-test` no deploy público. Para usar o login Discord normal, continue iniciando `node server.js` e acesse <http://localhost:8765>.
 
 ## Prévia de perfil ao compartilhar no Discord
 

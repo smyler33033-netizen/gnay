@@ -5,15 +5,26 @@ const http = require("node:http");
 const net = require("node:net");
 
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, "data");
-const UPLOAD_DIR = path.join(ROOT, "uploads");
+const DATA_DIR = process.env.GNAY_DATA_DIR || path.join(ROOT, "data");
+const UPLOAD_DIR = process.env.GNAY_UPLOAD_DIR || path.join(ROOT, "uploads");
 const UPLOAD_PART_DIR = path.join(UPLOAD_DIR, ".parts");
+const CHAT_AUDIO_DIR = path.join(DATA_DIR, "chat-audio");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
 const UPLOAD_CHUNK_SIZE = 512 * 1024;
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024;
 const MAX_UPLOAD_PARTS = Math.ceil(MAX_UPLOAD_SIZE / UPLOAD_CHUNK_SIZE);
 const MAX_TEMPLATE_PROFILE_SIZE = 512 * 1024;
 const MAX_PROFILE_TEMPLATE_SIZE = 1536 * 1024;
+const MAX_CHAT_AUDIO_SIZE = 10 * 1024 * 1024;
+const CHAT_MESSAGE_LIMIT = 100;
+const CHAT_GUILD_ID = "1558728880309665845";
+const CHAT_MEMBER_ROLE_ID = "1558728880628441135";
+const CHAT_ADMIN_ROLE_IDS = new Set([
+  "1558728880695681106",
+  "1559579048609583136",
+  "1560406584998236160",
+  "1558728880683089999",
+]);
 const TEMPLATE_LIMIT = 10;
 const PROFILE_TEMPLATE_LIMIT = 50;
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
@@ -23,6 +34,7 @@ const RESERVED_SLUGS = new Set([
   "admin",
   "api",
   "badges",
+  "chat",
   "conexoes",
   "config",
   "customizacao",
@@ -46,8 +58,22 @@ const RESERVED_SLUGS = new Set([
   "estatisticas",
 ]);
 const uploadParts = new Map();
+const chatPostTimes = new Map();
+const friendRequestTimes = new Map();
 const discordPresenceCache = new Map();
+const discordMemberRoleCache = new Map();
+const discordMemberRolePending = new Map();
 const audioInfoCache = new Map();
+const CHAT_STICKERS = Object.freeze({
+  wave: { emoji: "👋", name: "Oi" },
+  heart: { emoji: "💖", name: "Coração" },
+  star: { emoji: "🌟", name: "Estrela" },
+  party: { emoji: "🎉", name: "Comemoração" },
+  cat: { emoji: "😺", name: "Gatinho" },
+  fire: { emoji: "🔥", name: "Fogo" },
+  moon: { emoji: "🌙", name: "Lua" },
+  sparkle: { emoji: "✨", name: "Brilho" },
+});
 const mimeTypes = {
   ".aac": "audio/aac",
   ".avif": "image/avif",
@@ -93,6 +119,7 @@ const PORT = Number(process.env.PORT || 8765);
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_PART_DIR, { recursive: true });
+fs.mkdirSync(CHAT_AUDIO_DIR, { recursive: true });
 for (const name of fs.readdirSync(UPLOAD_PART_DIR)) {
   if (/^[a-f0-9]{32}\.part$/i.test(name)) fs.rmSync(path.join(UPLOAD_PART_DIR, name), { force: true });
 }
@@ -106,6 +133,10 @@ function readStore() {
       profileTemplates: store.profileTemplates || {},
       sessions: store.sessions || {},
       templates: store.templates || {},
+      chatMessages: Array.isArray(store.chatMessages) ? store.chatMessages : [],
+      chatFriendRequests: Array.isArray(store.chatFriendRequests) ? store.chatFriendRequests : [],
+      chatFriendships: Array.isArray(store.chatFriendships) ? store.chatFriendships : [],
+      chatDmMessages: Array.isArray(store.chatDmMessages) ? store.chatDmMessages : [],
       templateFavorites: store.templateFavorites || {},
       templateRecent: store.templateRecent || {},
       viewedIps: store.viewedIps || {},
@@ -119,6 +150,10 @@ function readStore() {
         profileTemplates: {},
         sessions: {},
         templates: {},
+        chatMessages: [],
+        chatFriendRequests: [],
+        chatFriendships: [],
+        chatDmMessages: [],
         templateFavorites: {},
         templateRecent: {},
         viewedIps: {},
@@ -199,6 +234,123 @@ function clientIp(req) {
     }
   }
   return "";
+}
+
+function isLoopback(req) {
+  let address = req.socket.remoteAddress || "";
+  if (address.startsWith("::ffff:")) address = address.slice(7);
+  return address === "127.0.0.1" || address === "::1";
+}
+
+function allowChatPost(userId) {
+  const now = Date.now();
+  const last = chatPostTimes.get(userId) || 0;
+  if (now - last < 1500) return false;
+  chatPostTimes.set(userId, now);
+  if (chatPostTimes.size > 2000) {
+    for (const [id, timestamp] of chatPostTimes) {
+      if (now - timestamp > 60_000) chatPostTimes.delete(id);
+    }
+  }
+  return true;
+}
+
+function allowFriendRequest(userId) {
+  const now = Date.now();
+  const last = friendRequestTimes.get(userId) || 0;
+  if (now - last < 10_000) return false;
+  friendRequestTimes.set(userId, now);
+  return true;
+}
+
+function trimChatMessages() {
+  const removed = store.chatMessages.splice(0, Math.max(0, store.chatMessages.length - CHAT_MESSAGE_LIMIT));
+  for (const message of removed) {
+    if (!message.audio || store.chatMessages.some((entry) => entry.audio === message.audio)) continue;
+    fs.promises.unlink(path.join(CHAT_AUDIO_DIR, message.audio + ".audio")).catch((error) => {
+      if (error.code !== "ENOENT") console.error("Could not remove expired chat audio:", error);
+    });
+  }
+}
+
+function deleteChatMessagesBySlug(slug) {
+  const removed = store.chatMessages.filter((message) => message.slug === slug);
+  store.chatMessages = store.chatMessages.filter((message) => message.slug !== slug);
+  for (const message of removed) {
+    if (!message.audio || store.chatMessages.some((entry) => entry.audio === message.audio)) continue;
+    fs.promises.unlink(path.join(CHAT_AUDIO_DIR, message.audio + ".audio")).catch((error) => {
+      if (error.code !== "ENOENT") console.error("Could not remove deleted user's chat audio:", error);
+    });
+  }
+}
+
+function chatUserCard(discordId) {
+  const user = Object.values(store.users).find((entry) => entry.discordId === discordId);
+  if (!user) return null;
+  const profile = store.profiles[user.slug] || {};
+  const rawAvatar = profile.avatar || user.dav || "";
+  const avatar =
+    typeof rawAvatar === "string" &&
+    rawAvatar.length <= 4096 &&
+    /^(https:\/\/|\/uploads\/|data:image\/(?:png|jpeg|webp|gif);base64,)/i.test(rawAvatar)
+      ? rawAvatar
+      : "";
+  return {
+    slug: user.slug,
+    name: String(profile.dn || user.dn || user.du || "Usuário").slice(0, 40),
+    avatar,
+  };
+}
+
+function chatFriendshipFor(id, discordId) {
+  if (!/^[a-f0-9-]{36}$/i.test(id)) return null;
+  const friendship = store.chatFriendships.find(
+    (entry) => entry.id === id && (entry.a === discordId || entry.b === discordId),
+  );
+  return friendship || null;
+}
+
+async function chatMemberRole(discordId) {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (!botToken || !/^\d{17,20}$/.test(discordId || "")) return "";
+  const cached = discordMemberRoleCache.get(discordId);
+  if (cached && cached.expiresAt > Date.now()) return cached.role;
+  const pending = discordMemberRolePending.get(discordId);
+  if (pending) return pending;
+  const lookup = (async () => {
+    try {
+      const response = await fetch(
+        "https://discord.com/api/v10/guilds/" + CHAT_GUILD_ID + "/members/" + encodeURIComponent(discordId),
+        { headers: { authorization: "Bot " + botToken } },
+      );
+      if (response.status === 404) {
+        discordMemberRoleCache.set(discordId, { role: "", expiresAt: Date.now() + 5 * 60_000 });
+        return "";
+      }
+      if (!response.ok) {
+        discordMemberRoleCache.set(discordId, { role: "", expiresAt: Date.now() + 30_000 });
+        console.error("Discord guild role lookup failed with HTTP " + response.status + ".");
+        return "";
+      }
+      const member = await response.json();
+      const roles = Array.isArray(member.roles) ? member.roles : [];
+      const role = roles.some((id) => CHAT_ADMIN_ROLE_IDS.has(id))
+        ? "admin"
+        : roles.includes(CHAT_MEMBER_ROLE_ID)
+          ? "member"
+          : "";
+      discordMemberRoleCache.set(discordId, { role, expiresAt: Date.now() + 5 * 60_000 });
+      return role;
+    } catch (error) {
+      discordMemberRoleCache.set(discordId, { role: "", expiresAt: Date.now() + 30_000 });
+      console.error("Discord guild role lookup failed:", error.message);
+      return "";
+    } finally {
+      discordMemberRolePending.delete(discordId);
+    }
+  })();
+  discordMemberRolePending.set(discordId, lookup);
+  return lookup;
 }
 
 function viewIpHash(slug, address) {
@@ -328,6 +480,46 @@ function templateProfileSnapshot(profile) {
     delete snapshot[key],
   );
   return snapshot;
+}
+
+function applyTemplateBioStyles(profileBio, templateBio) {
+  const bio = typeof profileBio === "string" ? profileBio : "";
+  if (!bio) return bio;
+
+  const tagPattern = /\[(\/?)(b|i|u|s|glow|rainbow|shake|c(?:=#[0-9a-fA-F]{3,8})?|rgb(?:=#[0-9a-fA-F]{6},#[0-9a-fA-F]{6})?)\]/g;
+  const stack = [];
+  const matched = [];
+  let match;
+  while ((match = tagPattern.exec(String(templateBio || ""))) !== null) {
+    const tag = match[2].split("=")[0];
+    if (match[1]) {
+      if (stack.length && stack[stack.length - 1].tag === tag) matched.push(stack.pop());
+    } else if (tag !== "c" || match[2].includes("=")) {
+      stack.push({ tag, token: match[0], index: match.index });
+    }
+  }
+
+  const effectGroup = (tag) => (tag === "c" || tag === "rgb" || tag === "rainbow" ? "color" : tag);
+  const styles = new Map();
+  matched
+    .sort((a, b) => a.index - b.index)
+    .forEach((style) => styles.set(effectGroup(style.tag), style));
+  const wrappers = [...styles.values()];
+  if (!wrappers.length) return bio;
+  const overriddenEffects = new Set(styles.keys());
+  const bioWithTemplateEffects = bio.replace(tagPattern, (token, _closing, content) =>
+    overriddenEffects.has(effectGroup(content.split("=")[0])) ? "" : token,
+  );
+
+  return (
+    wrappers.map((style) => style.token).join("") +
+    bioWithTemplateEffects +
+    wrappers
+      .slice()
+      .reverse()
+      .map((style) => "[/" + style.tag + "]")
+      .join("")
+  );
 }
 
 function templateStars(id) {
@@ -558,8 +750,8 @@ async function handleOAuthCallback(req, res, url) {
         premium: false,
         host: false,
       };
-      store.users[slug] = user;
-      store.profiles[slug] = {};
+      store.users[user.slug] = user;
+      store.profiles[user.slug] = {};
     } else {
       user.du = identity.username;
       user.dn = identity.global_name || identity.username;
@@ -589,6 +781,408 @@ async function handleOAuthCallback(req, res, url) {
 
 async function handleApi(req, res, url) {
   const { pathname } = url;
+  if (pathname === "/api/local-test/login" && req.method === "POST") {
+    if (process.env.GNAY_LOCAL_TEST !== "1" || !isLoopback(req)) {
+      sendJson(res, 404, { error: "Endpoint não encontrado." });
+      return;
+    }
+    if (!checkOrigin(req, res)) return;
+    const discordId = "999999999999999999";
+    let user = Object.values(store.users).find((entry) => entry.discordId === discordId);
+    if (!user) {
+      user = {
+        slug: "localteste",
+        discordId,
+        du: "local.demo",
+        dn: "Visitante de teste",
+        dav: "",
+        uid: Object.keys(store.users).length + 1,
+        joined: new Date().toISOString(),
+        premium: false,
+        host: false,
+        premiumType: 0,
+      };
+      store.users[user.slug] = user;
+      store.profiles[user.slug] = {};
+    }
+    const sid = crypto.randomBytes(32).toString("base64url");
+    store.sessions[tokenHash(sid)] = { slug: user.slug, expires: Date.now() + SESSION_TTL };
+    saveStore();
+    sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie(sid, Math.floor(SESSION_TTL / 1000)) });
+    return;
+  }
+
+  if (pathname === "/api/chat/social" && req.method === "GET") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const discordId = session.user.discordId;
+    const incoming = store.chatFriendRequests
+      .filter((request) => request.toId === discordId)
+      .map((request) => Object.assign({ id: request.id, created: request.created }, { user: chatUserCard(request.fromId) }))
+      .filter((request) => request.user);
+    const outgoing = store.chatFriendRequests
+      .filter((request) => request.fromId === discordId)
+      .map((request) => Object.assign({ id: request.id, created: request.created }, { user: chatUserCard(request.toId) }))
+      .filter((request) => request.user);
+    const friends = store.chatFriendships
+      .filter((friendship) => friendship.a === discordId || friendship.b === discordId)
+      .map((friendship) =>
+        Object.assign(
+          { id: friendship.id, created: friendship.created },
+          { user: chatUserCard(friendship.a === discordId ? friendship.b : friendship.a) },
+        ),
+      )
+      .filter((friendship) => friendship.user);
+    sendJson(res, 200, { incoming, outgoing, friends });
+    return;
+  }
+
+  if (pathname === "/api/chat/friends" && req.method === "POST") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    if (!checkOrigin(req, res)) return;
+    const body = await readJson(req, 4096);
+    const targetSlug = typeof body.slug === "string" ? body.slug.toLowerCase() : "";
+    const target = /^[a-z0-9_-]{2,20}$/.test(targetSlug) ? store.users[targetSlug] : null;
+    if (!target) {
+      sendJson(res, 404, { error: "Perfil não encontrado." });
+      return;
+    }
+    if (target.discordId === session.user.discordId) {
+      sendJson(res, 400, { error: "Você não pode enviar um pedido para si mesmo." });
+      return;
+    }
+    if (store.chatFriendships.some((entry) => entry.a === session.user.discordId && entry.b === target.discordId || entry.b === session.user.discordId && entry.a === target.discordId)) {
+      sendJson(res, 409, { error: "Vocês já são amigos." });
+      return;
+    }
+    if (store.chatFriendRequests.some((entry) => entry.fromId === target.discordId && entry.toId === session.user.discordId)) {
+      sendJson(res, 409, { error: "Essa pessoa já enviou um pedido. Confira seus pedidos recebidos." });
+      return;
+    }
+    if (store.chatFriendRequests.some((entry) => entry.fromId === session.user.discordId && entry.toId === target.discordId)) {
+      sendJson(res, 409, { error: "O pedido já foi enviado." });
+      return;
+    }
+    if (!allowFriendRequest(session.user.discordId)) {
+      sendJson(res, 429, { error: "Aguarde antes de enviar outro pedido de amizade." });
+      return;
+    }
+    const request = {
+      id: crypto.randomUUID(),
+      fromId: session.user.discordId,
+      toId: target.discordId,
+      created: Date.now(),
+    };
+    store.chatFriendRequests.push(request);
+    saveStore();
+    sendJson(res, 201, { request: { id: request.id, created: request.created } });
+    return;
+  }
+
+  const friendResponseMatch = pathname.match(/^\/api\/chat\/friends\/([a-f0-9-]{36})\/respond$/i);
+  if (friendResponseMatch && req.method === "POST") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    if (!checkOrigin(req, res)) return;
+    const body = await readJson(req, 4096);
+    if (body.action !== "accept" && body.action !== "decline") {
+      sendJson(res, 400, { error: "Ação de pedido inválida." });
+      return;
+    }
+    const index = store.chatFriendRequests.findIndex(
+      (request) => request.id === friendResponseMatch[1] && request.toId === session.user.discordId,
+    );
+    if (index < 0) {
+      sendJson(res, 404, { error: "Pedido de amizade não encontrado." });
+      return;
+    }
+    const request = store.chatFriendRequests[index];
+    store.chatFriendRequests.splice(index, 1);
+    if (body.action === "accept") {
+      const [a, b] = [request.fromId, request.toId].sort();
+      if (!store.chatFriendships.some((entry) => entry.a === a && entry.b === b)) {
+        store.chatFriendships.push({ id: crypto.randomUUID(), a, b, created: Date.now() });
+      }
+    }
+    saveStore();
+    sendJson(res, 200, { ok: true, accepted: body.action === "accept" });
+    return;
+  }
+
+  const friendMatch = pathname.match(/^\/api\/chat\/friends\/([a-f0-9-]{36})$/i);
+  if (friendMatch && req.method === "DELETE") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    if (!checkOrigin(req, res)) return;
+    const friendship = chatFriendshipFor(friendMatch[1], session.user.discordId);
+    if (!friendship) {
+      sendJson(res, 404, { error: "Amizade não encontrada." });
+      return;
+    }
+    store.chatFriendships = store.chatFriendships.filter((entry) => entry.id !== friendship.id);
+    store.chatDmMessages = store.chatDmMessages.filter((message) => message.friendshipId !== friendship.id);
+    saveStore();
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  const chatDmMatch = pathname.match(/^\/api\/chat\/dm\/([a-f0-9-]{36})$/i);
+  if (chatDmMatch && (req.method === "GET" || req.method === "POST")) {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const friendship = chatFriendshipFor(chatDmMatch[1], session.user.discordId);
+    if (!friendship) {
+      sendJson(res, 403, { error: "A conversa só está disponível entre amigos." });
+      return;
+    }
+    if (req.method === "GET") {
+      const messages = store.chatDmMessages
+        .filter((message) => message.friendshipId === friendship.id)
+        .slice(-100)
+        .map((message) => {
+          const author = chatUserCard(message.fromId);
+          const template = message.templateId ? store.templates[message.templateId] : null;
+          return {
+            id: message.id,
+            fromId: message.fromId,
+            created: message.created,
+            text: message.text || "",
+            sticker: message.sticker || "",
+            author,
+            template: template && template.vis === "public"
+              ? { id: template.id, name: template.name, ownerSlug: template.ownerSlug, preview: template.preview || "" }
+              : null,
+          };
+        })
+        .filter((message) => message.author);
+      sendJson(res, 200, { messages });
+      return;
+    }
+    if (!checkOrigin(req, res)) return;
+    if (!allowChatPost(session.user.discordId)) {
+      sendJson(res, 429, { error: "Aguarde um instante antes de enviar outra mensagem." });
+      return;
+    }
+    const body = await readJson(req, 16 * 1024);
+    const type = body.type === "sticker" || body.type === "template" ? body.type : "text";
+    const message = {
+      id: crypto.randomUUID(),
+      friendshipId: friendship.id,
+      fromId: session.user.discordId,
+      toId: friendship.a === session.user.discordId ? friendship.b : friendship.a,
+      text: "",
+      sticker: "",
+      templateId: "",
+      created: Date.now(),
+    };
+    if (type === "text") {
+      message.text = typeof body.text === "string" ? body.text.trim() : "";
+      if (!message.text || message.text.length > 1000) {
+        sendJson(res, 400, { error: "Escreva uma mensagem de até 1000 caracteres." });
+        return;
+      }
+    } else if (type === "sticker") {
+      if (typeof body.sticker !== "string" || !Object.hasOwn(CHAT_STICKERS, body.sticker)) {
+        sendJson(res, 400, { error: "Figurinha inválida." });
+        return;
+      }
+      message.sticker = body.sticker;
+    } else {
+      const templateId = typeof body.templateId === "string" ? body.templateId : String(body.templateId || "");
+      const template = /^\d{1,9}$/.test(templateId) ? store.templates[templateId] : null;
+      if (!template || template.vis !== "public") {
+        sendJson(res, 404, { error: "Esse template público não está disponível." });
+        return;
+      }
+      message.templateId = template.id;
+    }
+    store.chatDmMessages.push(message);
+    const dmForFriendship = store.chatDmMessages.filter((entry) => entry.friendshipId === friendship.id);
+    if (dmForFriendship.length > 100) {
+      const expiredIds = new Set(dmForFriendship.slice(0, dmForFriendship.length - 100).map((entry) => entry.id));
+      store.chatDmMessages = store.chatDmMessages.filter((entry) => !expiredIds.has(entry.id));
+    }
+    saveStore();
+    sendJson(res, 201, { message: { id: message.id } });
+    return;
+  }
+
+  if (pathname === "/api/chat/messages" && (req.method === "GET" || req.method === "POST")) {
+    const session = requireUser(req, res);
+    if (!session) return;
+    if (req.method === "GET") {
+      const recentMessages = store.chatMessages.slice(-CHAT_MESSAGE_LIMIT);
+      const messages = await Promise.all(recentMessages.map(async (message) => {
+        const user = store.users[message.slug];
+        const profile = store.profiles[message.slug] || {};
+        const rawAvatar = profile.avatar || (user && user.dav) || "";
+        const avatar =
+          typeof rawAvatar === "string" &&
+          rawAvatar.length <= 4096 &&
+          /^(https:\/\/|\/uploads\/|data:image\/(?:png|jpeg|webp|gif);base64,)/i.test(rawAvatar)
+            ? rawAvatar
+            : "";
+        return {
+          id: message.id,
+          text: message.text,
+          sticker: message.sticker || "",
+          audio: message.audio || "",
+          created: message.created,
+          author: {
+            slug: message.slug,
+            name: String(profile.dn || (user && (user.dn || user.du)) || "Usuário").slice(0, 40),
+            avatar,
+            discordId: user ? user.discordId : "",
+            memberRole: user ? await chatMemberRole(user.discordId) : "",
+          },
+        };
+      }));
+      sendJson(res, 200, { messages });
+      return;
+    }
+    if (!checkOrigin(req, res)) return;
+    if (!allowChatPost(session.user.discordId)) {
+      sendJson(res, 429, { error: "Aguarde um instante antes de enviar outra mensagem." });
+      return;
+    }
+    const body = await readJson(req, 16 * 1024);
+    const sticker = body.type === "sticker" && typeof body.sticker === "string" ? body.sticker : "";
+    const text = typeof body.text === "string" ? body.text.trim() : "";
+    if (sticker && !Object.hasOwn(CHAT_STICKERS, sticker)) {
+      sendJson(res, 400, { error: "Figurinha inválida." });
+      return;
+    }
+    if (!sticker && (!text || text.length > 1000)) {
+      sendJson(res, 400, { error: "Escreva uma mensagem de até 1000 caracteres." });
+      return;
+    }
+    const message = {
+      id: crypto.randomUUID(),
+      slug: session.user.slug,
+      text,
+      sticker,
+      audio: "",
+      created: Date.now(),
+    };
+    store.chatMessages.push(message);
+    trimChatMessages();
+    saveStore();
+    sendJson(res, 201, { message: { id: message.id } });
+    return;
+  }
+
+  const chatAudioMatch = pathname.match(/^\/api\/chat\/audio\/([a-f0-9-]{36})$/i);
+  if (chatAudioMatch && req.method === "GET") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const message = store.chatMessages.find((entry) => entry.audio === chatAudioMatch[1]);
+    if (!message) {
+      sendJson(res, 404, { error: "Áudio não encontrado." });
+      return;
+    }
+    const filename = path.join(CHAT_AUDIO_DIR, message.audio + ".audio");
+    try {
+      const stat = await fs.promises.stat(filename);
+      const range = req.headers.range;
+      const headers = {
+        "cache-control": "private, no-store",
+        "content-type": message.audioType || "audio/webm",
+        "content-length": stat.size,
+        "x-content-type-options": "nosniff",
+        "accept-ranges": "bytes",
+      };
+      if (range) {
+        const match = range.match(/^bytes=(\d*)-(\d*)$/);
+        if (!match || (!match[1] && !match[2])) {
+          res.writeHead(416, { "content-range": "bytes */" + stat.size });
+          res.end();
+          return;
+        }
+        const start = match[1] ? Number(match[1]) : Math.max(0, stat.size - Number(match[2]));
+        const end = match[2] && match[1] ? Math.min(Number(match[2]), stat.size - 1) : stat.size - 1;
+        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || start >= stat.size) {
+          res.writeHead(416, { "content-range": "bytes */" + stat.size });
+          res.end();
+          return;
+        }
+        headers["content-range"] = "bytes " + start + "-" + end + "/" + stat.size;
+        headers["content-length"] = end - start + 1;
+        res.writeHead(206, headers);
+        fs.createReadStream(filename, { start, end }).pipe(res);
+        return;
+      }
+      res.writeHead(200, headers);
+      fs.createReadStream(filename).pipe(res);
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        sendJson(res, 404, { error: "Áudio não encontrado." });
+        return;
+      }
+      throw error;
+    }
+    return;
+  }
+
+  if (pathname === "/api/chat/audio" && req.method === "POST") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    if (!checkOrigin(req, res)) return;
+    const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+    const allowedTypes = new Set(["audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav", "audio/x-wav"]);
+    if (!allowedTypes.has(type)) {
+      sendJson(res, 415, { error: "Formato de áudio não suportado. Grave novamente no navegador." });
+      return;
+    }
+    const declaredSize = Number(req.headers["content-length"] || 0);
+    if (declaredSize > MAX_CHAT_AUDIO_SIZE) {
+      sendJson(res, 413, { error: "O áudio deve ter no máximo 10 MB." });
+      return;
+    }
+    if (!allowChatPost(session.user.discordId)) {
+      sendJson(res, 429, { error: "Aguarde um instante antes de enviar outra mensagem." });
+      return;
+    }
+    const chunks = [];
+    let totalSize = 0;
+    let tooLarge = false;
+    for await (const chunk of req) {
+      totalSize += chunk.length;
+      if (totalSize > MAX_CHAT_AUDIO_SIZE) {
+        tooLarge = true;
+        chunks.length = 0;
+      } else if (!tooLarge) chunks.push(chunk);
+    }
+    if (tooLarge) {
+      sendJson(res, 413, { error: "O áudio deve ter no máximo 10 MB." });
+      return;
+    }
+    if (!totalSize) {
+      sendJson(res, 400, { error: "O áudio gravado está vazio." });
+      return;
+    }
+    const text = (url.searchParams.get("text") || "").trim();
+    if (text.length > 1000) {
+      sendJson(res, 400, { error: "A mensagem junto ao áudio deve ter até 1000 caracteres." });
+      return;
+    }
+    const audio = crypto.randomUUID();
+    await fs.promises.writeFile(path.join(CHAT_AUDIO_DIR, audio + ".audio"), Buffer.concat(chunks), { flag: "wx" });
+    const message = {
+      id: crypto.randomUUID(),
+      slug: session.user.slug,
+      text,
+      audio,
+      audioType: type === "audio/x-wav" ? "audio/wav" : type,
+      created: Date.now(),
+    };
+    store.chatMessages.push(message);
+    trimChatMessages();
+    saveStore();
+    sendJson(res, 201, { message: { id: message.id } });
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/audio-info") {
     const provider = url.searchParams.get("provider");
     const id = url.searchParams.get("id");
@@ -992,31 +1586,31 @@ async function handleApi(req, res, url) {
       sendJson(res, 404, { error: "not_found" });
       return;
     }
-    const body = await readJson(req, 16 * 1024);
     const current = store.profiles[session.user.slug] || {};
     const keep = new Set(["dcId", "views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"]);
-    if (body.full !== true) {
-      [
-        "desc",
-        "loc",
-        "avatar",
-        "links",
-        "audios",
-        "audio",
-        "audioN",
-        "act",
-        "shuf",
-        "apl",
-        "dn",
-        "uid",
-        "alias",
-      ].forEach((key) => keep.add(key));
-    }
+    [
+      "desc",
+      "loc",
+      "avatar",
+      "links",
+      "audios",
+      "audio",
+      "audioN",
+      "act",
+      "shuf",
+      "apl",
+      "dn",
+      "uid",
+      "alias",
+    ].forEach((key) => keep.add(key));
     const profile = Object.assign({}, template.profile);
     keep.forEach((key) => {
       if (Object.hasOwn(current, key)) profile[key] = current[key];
       else delete profile[key];
     });
+    if (Object.hasOwn(current, "desc")) {
+      profile.desc = applyTemplateBioStyles(current.desc, template.profile.desc);
+    }
     profile.dcId = session.user.discordId;
     const clean = cleanProfile(profile);
     if (Buffer.byteLength(JSON.stringify(clean), "utf8") > MAX_TEMPLATE_PROFILE_SIZE) {
@@ -1112,6 +1706,9 @@ async function handleApi(req, res, url) {
       store.profiles[slug] = store.profiles[oldSlug];
       delete store.profiles[oldSlug];
     }
+    store.chatMessages.forEach((message) => {
+      if (message.slug === oldSlug) message.slug = slug;
+    });
     for (const activeSession of Object.values(store.sessions)) {
       if (activeSession.slug === oldSlug) activeSession.slug = slug;
     }
@@ -1294,6 +1891,20 @@ async function handleApi(req, res, url) {
 
   if (req.method === "DELETE" && pathname === "/api/account") {
     if (!checkOrigin(req, res)) return;
+    deleteChatMessagesBySlug(session.user.slug);
+    const discordId = session.user.discordId;
+    store.chatFriendRequests = store.chatFriendRequests.filter(
+      (request) => request.fromId !== discordId && request.toId !== discordId,
+    );
+    const removedFriendships = new Set(
+      store.chatFriendships
+        .filter((friendship) => friendship.a === discordId || friendship.b === discordId)
+        .map((friendship) => friendship.id),
+    );
+    store.chatFriendships = store.chatFriendships.filter((friendship) => !removedFriendships.has(friendship.id));
+    store.chatDmMessages = store.chatDmMessages.filter(
+      (message) => message.fromId !== discordId && message.toId !== discordId,
+    );
     delete store.users[session.user.slug];
     delete store.profiles[session.user.slug];
     delete store.viewedIps[session.user.slug];
@@ -1314,17 +1925,26 @@ async function serveStatic(req, res, pathname) {
     sendJson(res, 400, { error: "Caminho inválido." });
     return;
   }
+  const isLocalTestPath = decoded === "/local-test" || decoded === "/local-test/";
+  if (isLocalTestPath) {
+    if (!isLoopback(req)) {
+      sendJson(res, 404, { error: "Arquivo não encontrado." });
+      return;
+    }
+  }
   const uploadName = decoded.startsWith("/uploads/") ? decoded.slice("/uploads/".length) : "";
   const isAllowedUpload = !!uploadName && path.basename(uploadName) === uploadName;
   const isPublicFile = ["/", "/index.html", "/hero-bg.jpg", "/shooting-banner.jpg"].includes(decoded);
   const isAppRoute = !path.extname(decoded) && !decoded.startsWith("/uploads/");
-  if (!isAllowedUpload && !isPublicFile && !isAppRoute) {
+  if (!isAllowedUpload && !isPublicFile && !isAppRoute && !isLocalTestPath) {
     sendJson(res, 404, { error: "Arquivo não encontrado." });
     return;
   }
   const relative = isAllowedUpload
     ? path.join("uploads", uploadName)
-    : isAppRoute
+    : isLocalTestPath
+      ? path.join("local-test", "index.html")
+      : isAppRoute
       ? "index.html"
       : decoded.slice(1);
   const file = path.resolve(ROOT, relative);
