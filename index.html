@@ -11078,15 +11078,29 @@
         if (window.SpotifyIframeApi) return Promise.resolve(window.SpotifyIframeApi);
         if (spotifyIframeApiPromise) return spotifyIframeApiPromise;
         spotifyIframeApiPromise = new Promise((resolve, reject) => {
-          window.onSpotifyIframeApiReady = resolve;
+          let settled = false,
+            timer = 0;
+          const finish = (error, api) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            if (error) {
+              if (window.onSpotifyIframeApiReady === onReady) window.onSpotifyIframeApiReady = null;
+              spotifyIframeApiPromise = null;
+              reject(error);
+            } else resolve(api);
+          };
+          const onReady = (api) => finish(null, api);
+          window.onSpotifyIframeApiReady = onReady;
           const script = document.createElement("script");
           script.src = "https://open.spotify.com/embed/iframe-api/v1";
           script.async = true;
-          script.onerror = () => {
-            spotifyIframeApiPromise = null;
-            reject(new Error("Não foi possível carregar o player oficial do Spotify."));
-          };
+          script.onerror = () => finish(new Error("Não foi possível carregar o player oficial do Spotify."));
           document.head.appendChild(script);
+          timer = setTimeout(() => {
+            script.remove();
+            finish(new Error("O player oficial do Spotify demorou para responder."));
+          }, 12000);
         });
         return spotifyIframeApiPromise;
       }
@@ -11126,7 +11140,10 @@
         const c = (DCC[id] = DCC[id] || { t: 0 });
         if (c.p && Date.now() - c.t < 8000) return c.p;
         c.t = Date.now();
-        c.p = fetch("/api/discord/" + id, { cache: "no-store" })
+        c.p = fetch("/api/discord/" + id, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(7000),
+        })
           .then(async (r) => {
             let j = null;
             try {
@@ -13270,7 +13287,7 @@
             }
             embedWrap = document.createElement("div");
             embedWrap.style.cssText =
-              "display:none;position:fixed;left:12px;bottom:calc(var(--safe-b) + 12px);z-index:10;width:min(" +
+              "display:block;visibility:hidden;position:fixed;left:12px;bottom:calc(var(--safe-b) + 12px);z-index:10;width:min(" +
               (itm.provider === "youtube" ? "360px" : "300px") +
               ",calc(100vw - 24px));height:" +
               (itm.provider === "youtube" ? "203px" : "152px") +
@@ -13338,6 +13355,7 @@
           };
           const playEmbed = () => {
             wantPlay = true;
+            if (embedWrap) embedWrap.style.visibility = "visible";
             if (embedProvider === "spotify") {
               if (spotifyController) {
                 try {
@@ -13357,6 +13375,11 @@
             if (embedProvider !== "youtube" || !embedFrame) {
               sync();
               return;
+            }
+            const src = new URL(embedFrame.src);
+            if (src.searchParams.get("autoplay") !== "1") {
+              src.searchParams.set("autoplay", "1");
+              embedFrame.src = src.href;
             }
             [0, 250, 750, 1500].forEach((delay) => setTimeout(() => {
               if (!wantPlay || !embedFrame || !embedFrame.contentWindow) return;
@@ -13620,7 +13643,6 @@
           sp.append(h1, h2);
           sp.onclick = () => {
             sp.remove();
-            if (embedWrap) embedWrap.style.display = "block";
             try {
               go();
             } catch (error) {
