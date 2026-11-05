@@ -186,6 +186,12 @@
     <script>
       (function () {
         try {
+          var season = "christmas";
+          try {
+            var savedSeason = localStorage.getItem("gnay_visual_theme");
+            if (["halloween", "easter", "christmas"].includes(savedSeason)) season = savedSeason;
+          } catch (e) {}
+          document.documentElement.dataset.season = season;
           var p = decodeURIComponent(location.pathname)
             .replace(/^\/+|\/+$/g, "")
             .replace(/^@/, "")
@@ -453,6 +459,32 @@
         inset: 0;
         z-index: -1;
         background: linear-gradient(180deg, rgba(3, 10, 28, 0.35), rgba(3, 10, 28, 0.55));
+      }
+      .christmas-flight-original,
+      .christmas-tree-original {
+        display: none !important;
+      }
+      .christmas-tree {
+        display: none;
+        position: absolute;
+        z-index: 1;
+        left: 50%;
+        top: 14px;
+        width: clamp(150px, 17vw, 220px);
+        height: auto;
+        opacity: 0.98;
+        transform: translateX(-50%);
+        filter: drop-shadow(0 12px 24px #c79d4a99);
+        pointer-events: none;
+      }
+      html:not(.bp)[data-season="christmas"] #v-home .christmas-tree {
+        display: block;
+      }
+      @media (max-width: 700px) {
+        html:not(.bp)[data-season="christmas"] #v-home .christmas-tree {
+          top: 4px;
+          width: 132px;
+        }
       }
       .hero h1 {
         font-size: clamp(44px, 8vw, 72px);
@@ -2306,7 +2338,7 @@
         top: calc(var(--safe-t) + 14px);
         left: 50%;
         transform: translateX(-50%);
-        width: min(560px, calc(100vw - 28px));
+        width: min(320px, calc(100vw - 24px));
         box-sizing: border-box;
         z-index: 6;
         color: #fff;
@@ -2345,8 +2377,8 @@
         height: 14px;
       }
       .pfp.pfp-provider {
-        width: min(360px, calc(100vw - 24px));
-        max-width: 360px;
+        width: min(320px, calc(100vw - 24px));
+        max-width: 320px;
         left: 12px;
         transform: none;
         flex: 0 1 auto;
@@ -2697,6 +2729,11 @@
         min-width: 0;
         width: 100%;
       }
+      .pfg.pfp {
+        width: min(320px, calc(100vw - 24px));
+        max-width: 320px;
+        flex: 0 1 auto;
+      }
       .pfg .pi {
         width: 68px;
         height: 68px;
@@ -2890,10 +2927,81 @@
         }
       }
       .rnb {
-        background: linear-gradient(90deg, #f66, #fc6, #6f6, #6cf, #c6f);
+        background: repeating-linear-gradient(
+          90deg,
+          #f66 0,
+          #fc6 40px,
+          #6f6 80px,
+          #6cf 120px,
+          #c6f 160px,
+          #f66 200px
+        );
+        background-size: 200px 100%;
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
+        animation: rgb-loop 5s linear infinite;
+      }
+      .rgb2 {
+        background: repeating-linear-gradient(90deg, var(--rgb-a) 0, var(--rgb-b) 80px, var(--rgb-a) 160px);
+        background-size: 160px 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: rgb2-loop 4s linear infinite;
+      }
+      @keyframes rgb2-loop {
+        from {
+          background-position: 0 0;
+        }
+        to {
+          background-position: -160px 0;
+        }
+      }
+      @keyframes rgb-loop {
+        from {
+          background-position: 0 0;
+        }
+        to {
+          background-position: -200px 0;
+        }
+      }
+      .name-wave span {
+        display: inline-block;
+        animation: name-wave 2.8s ease-in-out infinite;
+      }
+      @keyframes name-wave {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+      }
+      .name-hacker {
+        font-family: monospace;
+        color: #a4ff9b;
+        text-shadow: 0 0 8px #48ff5a;
+        animation: name-jitter 0.16s steps(2, end) infinite;
+      }
+      @keyframes name-jitter {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(1px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rnb,
+        .rgb2 {
+          animation: none;
+        }
+      }
+      .name-hacker {
+        animation: name-jitter 0.16s steps(2, end) infinite !important;
       }
       .shk {
         display: inline-block;
@@ -3519,14 +3627,14 @@
       }
       /* player de música */
       .pfp {
-        padding: 10px 12px;
-        gap: 12px;
+        padding: 6px 8px;
+        gap: 7px;
         align-items: center;
       }
       .pfp .cv {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
         display: grid;
         place-items: center;
         overflow: hidden;
@@ -3538,15 +3646,15 @@
         opacity: 0.5;
       }
       .pfp .mid b.tt {
-        font-size: 17px !important;
+        font-size: 13px !important;
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
       .pfp .tr {
-        font-size: 13px;
-        gap: 8px;
+        font-size: 10px;
+        gap: 5px;
         opacity: 0.9;
       }
       .pfp input[type="range"] {
@@ -3556,7 +3664,11 @@
       }
       .pfp .ctl {
         align-items: center;
-        gap: 2px;
+        gap: 0;
+      }
+      .pfp:not(.pfp-provider) .ctl .pfb:first-child,
+      .pfp:not(.pfp-provider) .ctl .pfb:last-of-type {
+        display: none;
       }
       .pf-volume {
         display: flex;
@@ -3567,11 +3679,11 @@
         border-left: 1px solid rgba(255, 255, 255, 0.18);
       }
       .pfp .pf-volume .pfb {
-        width: 36px;
-        height: 40px;
+        width: 32px;
+        height: 34px;
       }
       .pfp .pf-volume input[type="range"] {
-        width: 76px;
+        width: 44px;
         flex: none;
         accent-color: #fff;
       }
@@ -3603,8 +3715,8 @@
         place-items: center;
       }
       .pfp .ctl .pfb:nth-child(2) {
-        width: 46px;
-        height: 46px;
+        width: 34px;
+        height: 34px;
         background: #fff !important;
         color: #111;
       }
@@ -3612,17 +3724,17 @@
         font-size: 24px !important;
       }
       .pfp .ctl .pfb:nth-child(2) .ms {
-        font-size: 28px !important;
+        font-size: 22px !important;
       }
       @media (max-width: 560px) {
         .pfp {
-          width: calc(100vw - 20px);
-          padding: 8px;
-          gap: 6px;
+          width: min(320px, calc(100vw - 20px));
+          padding: 6px;
+          gap: 5px;
         }
         .pfp .cv {
-          width: 38px;
-          height: 38px;
+          width: 34px;
+          height: 34px;
         }
         .pfp .ctl {
           gap: 0;
@@ -3645,10 +3757,10 @@
           height: 34px;
         }
         .pfp .pf-volume input[type="range"] {
-          width: 52px;
+          width: 38px;
         }
         .pfp.pfp-provider {
-          width: min(360px, calc(100vw - 24px));
+          width: min(320px, calc(100vw - 24px));
         }
       }
 
@@ -6670,6 +6782,724 @@
       #nl-badge-frame {
         display: none !important;
       }
+      body.app #v-dash .page {
+        max-width: 1160px;
+      }
+      body.app #v-dash .halloween-hero {
+        min-height: 220px;
+        margin: 0 0 28px;
+        padding: 32px 38px;
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        border: 1px solid #513044;
+        border-radius: 28px;
+        background:
+          radial-gradient(ellipse at 82% 120%, #7a321d55, transparent 40%),
+          linear-gradient(112deg, #20131e 0%, #17121c 56%, #21151b 100%);
+        box-shadow: inset 0 1px #ffffff0a, 0 18px 50px #08050b55;
+      }
+      body.app #v-dash .halloween-hero h1 {
+        position: relative;
+        z-index: 1;
+        margin: 10px 0 8px;
+        font-size: clamp(30px, 4vw, 42px);
+        font-weight: 500;
+        letter-spacing: -0.035em;
+      }
+      body.app #v-dash .halloween-hero p {
+        position: relative;
+        z-index: 1;
+        max-width: 490px;
+        margin: 0;
+        color: #c4b8c2;
+        font-size: 16px;
+        line-height: 1.65;
+      }
+      body.app #v-dash .halloween-kicker {
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #ffb36b;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      body.app #v-dash .halloween-kicker > .ms {
+        font-size: 18px;
+      }
+      body.app #v-dash .halloween-kicker > .ms[data-season] {
+        display: none;
+      }
+      html[data-season="halloween"] body.app #v-dash .halloween-kicker > .ms[data-season="halloween"],
+      html[data-season="easter"] body.app #v-dash .halloween-kicker > .ms[data-season="easter"],
+      html[data-season="christmas"] body.app #v-dash .halloween-kicker > .ms[data-season="christmas"] {
+        display: inline-block;
+      }
+      body.app #v-dash .halloween-kicker-label,
+      body.app #v-dash .halloween-hero > p {
+        display: none;
+      }
+      html[data-season="halloween"] body.app #v-dash .halloween-kicker-label[data-season="halloween"],
+      html[data-season="easter"] body.app #v-dash .halloween-kicker-label[data-season="easter"],
+      html[data-season="christmas"] body.app #v-dash .halloween-kicker-label[data-season="christmas"] {
+        display: inline;
+      }
+      html[data-season="halloween"] body.app #v-dash .halloween-hero > p[data-season="halloween"],
+      html[data-season="easter"] body.app #v-dash .halloween-hero > p[data-season="easter"],
+      html[data-season="christmas"] body.app #v-dash .halloween-hero > p[data-season="christmas"] {
+        display: block;
+      }
+      body.app #v-dash .halloween-web {
+        position: absolute;
+        z-index: 0;
+        width: 230px;
+        height: 230px;
+        top: -10px;
+        right: 3%;
+        color: #d7a8c0;
+        opacity: 0.27;
+        pointer-events: none;
+      }
+      body.app #v-dash .halloween-spider {
+        position: absolute;
+        z-index: 1;
+        width: 48px;
+        height: 67px;
+        top: 0;
+        right: 19%;
+        color: #f0c4d2;
+        transform-origin: 50% 0;
+        animation: halloween-spider-sway 5s ease-in-out infinite;
+        pointer-events: none;
+      }
+      body.app #v-dash .halloween-spider svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      body.app #v-dash .holiday-art {
+        display: none;
+        position: absolute;
+        z-index: 1;
+        width: 120px;
+        height: 130px;
+        top: 24px;
+        right: 8%;
+        color: #f0c4d2;
+        pointer-events: none;
+      }
+      body.app #v-dash .holiday-art svg {
+        width: 100%;
+        height: 100%;
+      }
+      body.app #v-dash .holiday-art img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      html[data-season="halloween"] body.app #v-dash .halloween-web,
+      html[data-season="halloween"] body.app #v-dash .halloween-spider,
+      html[data-season="easter"] body.app #v-dash .easter-art,
+      html[data-season="christmas"] body.app #v-dash .christmas-art {
+        display: block;
+      }
+      html[data-season="halloween"] body.app #v-dash .halloween-web,
+      html[data-season="halloween"] body.app #v-dash .halloween-spider {
+        display: block;
+      }
+      html[data-season="halloween"] body.app #v-dash .easter-art,
+      html[data-season="halloween"] body.app #v-dash .christmas-art,
+      html[data-season="easter"] body.app #v-dash .halloween-web,
+      html[data-season="easter"] body.app #v-dash .halloween-spider,
+      html[data-season="easter"] body.app #v-dash .christmas-art,
+      html[data-season="christmas"] body.app #v-dash .halloween-web,
+      html[data-season="christmas"] body.app #v-dash .halloween-spider,
+      html[data-season="christmas"] body.app #v-dash .easter-art {
+        display: none;
+      }
+      html[data-season="easter"] body.app #v-dash .holiday-art {
+        color: #efb1c8;
+      }
+      html[data-season="christmas"] body.app #v-dash .holiday-art {
+        color: #f4d18c;
+      }
+      @keyframes halloween-spider-sway {
+        0%, 100% { transform: rotate(-4deg); }
+        50% { transform: rotate(5deg); }
+      }
+      html[data-season="halloween"] body.app #v-dash .top {
+        border-color: #352532;
+        background: linear-gradient(110deg, #171219, #111014);
+        box-shadow: 0 10px 35px #08050b33;
+      }
+      html[data-season="halloween"] body.app #v-dash .topv {
+        color: #e9dce6;
+      }
+      html[data-season="halloween"] body.app #v-dash .grid {
+        gap: 14px;
+      }
+      html[data-season="halloween"] body.app #v-dash .dc2 {
+        min-height: 150px;
+        padding: 23px 24px;
+        border: 1px solid #392637;
+        border-radius: 22px;
+        background:
+          radial-gradient(ellipse at 100% 0%, #a34a3020, transparent 42%),
+          linear-gradient(145deg, #1d171f, #17141a);
+        box-shadow: inset 0 1px #ffffff08, 0 12px 30px #08050b24;
+        transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+      }
+      html[data-season="halloween"] body.app #v-dash .dc2:hover {
+        transform: translateY(-3px);
+        border-color: #765044;
+        box-shadow: inset 0 1px #ffffff0b, 0 18px 38px #08050b55;
+      }
+      html[data-season="halloween"] body.app #v-dash .dc2 > span:first-child {
+        color: #c4b7c4;
+        font-size: 14px;
+      }
+      html[data-season="halloween"] body.app #v-dash .dc2 > .ms {
+        top: 21px;
+        right: 21px;
+        color: #e9955c;
+        opacity: 0.9;
+      }
+      html[data-season="halloween"] body.app #v-dash .dc2 b {
+        margin: 21px 0 7px;
+        font-size: 29px;
+        letter-spacing: -0.025em;
+      }
+      html[data-season="halloween"] body.app #v-dash .dc2 small {
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      html[data-season="halloween"] body.app #v-dash .page > h2 {
+        margin: 32px 0 15px 2px;
+        font-size: 23px;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+      }
+      html[data-season="halloween"] body.app #v-dash .pill {
+        border: 1px solid #593a46;
+        background: #291a25;
+        color: #f2c4ac;
+        font-size: 13px;
+        padding: 7px 14px;
+        transition: background 160ms ease, border-color 160ms ease;
+      }
+      html[data-season="halloween"] body.app #v-dash .pill:hover {
+        border-color: #a45b40;
+        background: #382027;
+      }
+      html[data-season="halloween"] body.app #v-dash .box {
+        border: 1px solid #322633;
+        background: linear-gradient(145deg, #19161c, #151318);
+        box-shadow: inset 0 1px #ffffff07, 0 12px 30px #08050b20;
+      }
+      html[data-season="halloween"] body.app #v-dash .box h3 {
+        color: #f0e7ef;
+      }
+      html[data-season="halloween"] body.app #v-dash .box h3 em {
+        color: #efa166;
+      }
+      html[data-season="halloween"] body.app #v-dash .row2 {
+        border: 1px solid #302631;
+        background: #201b22;
+        color: #e8dfe8;
+        transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+      }
+      html[data-season="halloween"] body.app #v-dash .row2:hover {
+        transform: translateY(-1px);
+        border-color: #704b48;
+        background: #2a2028;
+      }
+      html[data-season="halloween"] body.app #v-dash .row2 .ms {
+        color: #e9955c;
+      }
+      html[data-season="halloween"] body.app #v-dash .cn .row2 {
+        background: #211a24;
+      }
+      html[data-season="halloween"] body.app #v-dash .cn .sq {
+        border-color: #392637;
+        background: #201a22;
+        color: #e9955c;
+      }
+      html[data-season="halloween"] body.app #v-dash .bar {
+        border-color: #392637;
+        background: #231b25;
+      }
+      html[data-season="halloween"] body.app #v-dash .bar i {
+        border: 0;
+        background: linear-gradient(90deg, #9b4a36, #ed9b5b, #d77b62);
+        box-shadow: 0 0 18px #e58b5650;
+      }
+      html[data-season="halloween"] body.app #v-dash .note {
+        border-color: #53342d;
+        background: #241a1c;
+      }
+      html[data-season="halloween"] body.app #v-dash .note .warn {
+        background: #a94e31;
+      }
+      html[data-season="halloween"] body.app #v-dash .chk {
+        border-color: #352b36;
+        background: #201b23;
+      }
+      html[data-season="halloween"] body.app #v-dash .chk .ok {
+        background: #604338;
+      }
+      html[data-season="halloween"] body.app #v-dash .chart .ln {
+        background: linear-gradient(90deg, #a34e3a, #efaa67);
+        box-shadow: 0 0 14px #e58b5640;
+      }
+      html[data-season="halloween"] body.app #v-dash .chart .y,
+      html[data-season="halloween"] body.app #v-dash .chart .xs {
+        color: #897d8b;
+      }
+      @media (max-width: 700px) {
+        body.app #v-dash .halloween-hero {
+          min-height: 190px;
+          margin-bottom: 22px;
+          padding: 26px 23px;
+        }
+        body.app #v-dash .halloween-hero p {
+          max-width: 80%;
+          font-size: 14px;
+        }
+        body.app #v-dash .halloween-web {
+          width: 160px;
+          height: 160px;
+          right: -15px;
+          top: 18px;
+        }
+        body.app #v-dash .halloween-spider {
+          right: 15%;
+          width: 38px;
+          height: 54px;
+        }
+        body.app #v-dash .holiday-art {
+          width: 100px;
+          height: 110px;
+          right: 2%;
+          top: 40px;
+        }
+        body.app #v-dash .christmas-santa {
+          display: none;
+        }
+        body.app #v-dash .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+        body.app #v-dash .dc2 {
+          min-height: 130px;
+          padding: 17px 15px;
+          border-radius: 18px;
+        }
+        body.app #v-dash .dc2 b {
+          font-size: 22px;
+        }
+        body.app #v-dash .dc2 small {
+          font-size: 12px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        body.app #v-dash .halloween-spider {
+          animation: none;
+        }
+        body.app #v-dash .dc2,
+        body.app #v-dash .row2 {
+          transition: none;
+        }
+      }
+      html:not(.bp) {
+        --bg: #0e1110;
+        --card: #171b19;
+        --card2: #212724;
+        --line: #35403a;
+        --tx: #fbf8f4;
+        --mu: #b1b8b2;
+        --pu: #c23a43;
+        --pl: #f0ded0;
+        --btn: #8d2935;
+        --btnb: #bc5152;
+        --deep: #183527;
+        --deepb: #3a7450;
+      }
+      html:not(.bp)[data-season="halloween"] {
+        --bg: #100b13;
+        --card: #1a141c;
+        --card2: #241b26;
+        --line: #392a3b;
+        --tx: #fff7fb;
+        --mu: #ad9eae;
+        --pu: #d77845;
+        --pl: #f2a66b;
+        --btn: #3a202a;
+        --btnb: #704239;
+        --deep: #241825;
+        --deepb: #503447;
+      }
+      html:not(.bp)[data-season="easter"] {
+        --bg: #100f17;
+        --card: #1b1823;
+        --card2: #272130;
+        --line: #3e3548;
+        --tx: #fbf7ff;
+        --mu: #b6aabe;
+        --pu: #ad72be;
+        --pl: #e5a5bb;
+        --btn: #382541;
+        --btnb: #62466d;
+        --deep: #251b32;
+        --deepb: #4a3558;
+      }
+      html:not(.bp)[data-season="christmas"] body {
+        background:
+          radial-gradient(ellipse at 2% 5%, #315c3b25, transparent 34rem),
+          radial-gradient(ellipse at 96% 28%, #ad29351c, transparent 38rem),
+          var(--bg);
+        background-attachment: fixed;
+      }
+      html:not(.bp)[data-season="christmas"] body::after {
+        content: "";
+        position: fixed;
+        z-index: 19;
+        inset: -120px 0 0;
+        pointer-events: none;
+        opacity: 0.26;
+        background-image:
+          radial-gradient(2px 2px at 20px 30px, #fff 99%, transparent),
+          radial-gradient(2px 2px at 80px 110px, #fff 99%, transparent),
+          radial-gradient(1.5px 1.5px at 150px 65px, #eaf5ff 99%, transparent),
+          radial-gradient(2px 2px at 210px 180px, #fff 99%, transparent);
+        background-size: 260px 220px;
+        animation: christmas-snowfall 18s linear infinite;
+      }
+      @keyframes christmas-snowfall {
+        to { transform: translate3d(-30px, 220px, 0); }
+      }
+      html:not(.bp)[data-season="halloween"] body {
+        background:
+          radial-gradient(ellipse at 2% 5%, #713d291c, transparent 34rem),
+          radial-gradient(ellipse at 96% 28%, #512b5a1a, transparent 38rem),
+          var(--bg);
+        background-attachment: fixed;
+      }
+      html:not(.bp)[data-season="easter"] body {
+        background:
+          radial-gradient(ellipse at 4% 5%, #ad72be22, transparent 34rem),
+          radial-gradient(ellipse at 96% 28%, #e5a5bb1d, transparent 38rem),
+          var(--bg);
+        background-attachment: fixed;
+      }
+      html:not(.bp) .nav,
+      html:not(.bp) body.app .top {
+        border: 1px solid #402d3f;
+        background: linear-gradient(110deg, #1d151fef, #151219f5);
+        box-shadow: 0 12px 36px #08050b45, inset 0 1px #ffffff08;
+      }
+      html:not(.bp) .nav .logo,
+      html:not(.bp) .side .logo {
+        color: #ffe3c3;
+      }
+      html:not(.bp)[data-season="halloween"] .hero {
+        background-color: #180e18;
+        background-image:
+          linear-gradient(115deg, #1b1019d9, #24121dcc),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%23f2b48a' stroke-opacity='.55' stroke-width='1'%3E%3Cpath d='M120 0H0V120M120 0L0 120M60 0L0 60M120 60L60 0M0 0L120 120M0 60L60 120M60 120L120 60M120 0V120M0 0H120'/%3E%3C/svg%3E"),
+          url(hero-bg.jpg);
+        background-size: cover, 180px 180px, cover;
+        background-repeat: no-repeat;
+        background-position: center, right top, center;
+      }
+      html:not(.bp)[data-season="halloween"] .hero::before {
+        background: linear-gradient(180deg, #120b18a8, #25131cb8);
+      }
+      html:not(.bp)[data-season="halloween"] .side {
+        border-color: #39283b;
+        background-color: var(--bg);
+        background-image:
+          linear-gradient(180deg, #16101af5, #100c13f7),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%23d79a77' stroke-opacity='.4' stroke-width='1'%3E%3Cpath d='M120 0H0V120M120 0L0 120M60 0L0 60M120 60L60 0M0 0L120 120M0 60L60 120M60 120L120 60M120 0V120M0 0H120'/%3E%3C/svg%3E");
+        background-size: cover, 132px 132px;
+        background-repeat: no-repeat;
+        background-position: center, right bottom;
+      }
+      html:not(.bp) .side .sm.cur,
+      html:not(.bp) .side .subm a:hover,
+      html:not(.bp) .side .subm a.cur {
+        color: #ffe3c3;
+      }
+      html:not(.bp) .btn {
+        border-color: var(--btnb);
+        background: linear-gradient(115deg, #47232a, #332032);
+        box-shadow: inset 0 1px #ffffff0b;
+      }
+      html:not(.bp) .btn:hover {
+        background: linear-gradient(115deg, #66332d, #47263a);
+      }
+      html:not(.bp) .btn.dark {
+        background: #1b151e;
+        border-color: #3a2a3c;
+      }
+      html:not(.bp) .fb {
+        background: #171219;
+      }
+      html:not(.bp) .fb.c {
+        border-color: #3a2a3c;
+        background: linear-gradient(115deg, #231923, #1a141c);
+      }
+      html:not(.bp) .box,
+      html:not(.bp) .stat,
+      html:not(.bp) .plan,
+      html:not(.bp) .q,
+      html:not(.bp) .cta {
+        border: 1px solid #392a3b;
+        box-shadow: inset 0 1px #ffffff07, 0 14px 36px #08050b25;
+      }
+      html:not(.bp)[data-season="halloween"] .cta {
+        background:
+          radial-gradient(ellipse at 100% 100%, #793d2b35, transparent 42%),
+          linear-gradient(135deg, #211722, #19131c);
+      }
+      html:not(.bp) .pop {
+        border-color: #6a4035;
+        background: #2a1b22;
+      }
+      html:not(.bp) .stat .ms,
+      html:not(.bp) .plan li .ms,
+      html:not(.bp) .side .sm .ms {
+        color: var(--pl);
+      }
+      html:not(.bp) .pill {
+        border-color: #64413c;
+        background: #2a1b24;
+        color: #f4c49f;
+      }
+      html:not(.bp) .sheet > div {
+        border: 1px solid #493448;
+        background: linear-gradient(145deg, #1d1620, #151118);
+      }
+      html:not(.bp) :focus-visible {
+        outline-color: #f2a66b;
+      }
+      html:not(.bp)[data-season="christmas"] .nav,
+      html:not(.bp)[data-season="christmas"] body.app .top {
+        border-color: #49363a;
+        background: linear-gradient(110deg, #1d1718f5, #121615f7);
+      }
+      html:not(.bp)[data-season="christmas"] .nav .logo,
+      html:not(.bp)[data-season="christmas"] .side .logo {
+        color: #fff3e4;
+      }
+      html:not(.bp)[data-season="christmas"] .side {
+        border-color: #2b3d32;
+        background-color: var(--bg);
+        background-image:
+          linear-gradient(180deg, #151918f5, #101312f7),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23d7c58d' stroke-opacity='.42' stroke-width='2'%3E%3Cpath d='M50 8v62M50 15L38 30h9L34 44h12L29 59h42L55 44h11L54 30h9zM50 70v12m-12 0h24M14 18v12m-6-6h12M82 34v12m-6-6h12'/%3E%3C/svg%3E");
+        background-size: cover, 98px 98px;
+        background-repeat: no-repeat;
+        background-position: center, right bottom;
+      }
+      html:not(.bp)[data-season="christmas"] .hero {
+        padding-top: 235px;
+        background-color: #111615;
+        background-image:
+          linear-gradient(115deg, #101817dd, #261518d1),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23f2f5ef' stroke-opacity='.78' stroke-width='2'%3E%3Cpath d='M50 8v12m0 60v12M8 50h12m60 0h12M20 20l9 9m42 42 9 9m0-60-9 9m-42 42-9 9'/%3E%3Ccircle cx='50' cy='50' r='8'/%3E%3C/svg%3E"),
+          url(hero-bg.jpg);
+        background-size: cover, 92px 92px, cover;
+        background-repeat: no-repeat;
+        background-position: center, right top, center;
+      }
+      html:not(.bp)[data-season="christmas"] .hero::before {
+        background: linear-gradient(180deg, #0a1110a8, #251316b8);
+      }
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .halloween-hero {
+        border-color: #49363a;
+        background:
+          radial-gradient(ellipse at 86% 120%, #b83c4629, transparent 40%),
+          linear-gradient(112deg, #17211b, #151a17 58%, #241719);
+      }
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .halloween-kicker,
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .halloween-kicker .ms {
+        color: #f0d48b;
+      }
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .halloween-hero p {
+        color: #d0d5d0;
+      }
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .dc2,
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .box {
+        border-color: #38453d;
+        background-color: #171d19;
+      }
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .dc2 > .ms,
+      html:not(.bp)[data-season="christmas"] body.app #v-dash .row2 .ms {
+        color: #e7c77a;
+      }
+      html:not(.bp)[data-season="christmas"] .btn {
+        background: linear-gradient(115deg, #a52b36, #74232e);
+        border-color: #d26060;
+      }
+      html:not(.bp)[data-season="christmas"] .btn:hover {
+        background: linear-gradient(115deg, #bf3742, #8b2b35);
+      }
+      html:not(.bp)[data-season="christmas"] .stat .ms,
+      html:not(.bp)[data-season="christmas"] .plan li .ms,
+      html:not(.bp)[data-season="christmas"] .side .sm .ms {
+        color: #c9a76a;
+      }
+      html:not(.bp)[data-season="easter"] .nav,
+      html:not(.bp)[data-season="easter"] body.app .top {
+        border-color: #45384c;
+        background: linear-gradient(110deg, #1c1724f2, #15131cf7);
+      }
+      html:not(.bp)[data-season="easter"] .nav .logo,
+      html:not(.bp)[data-season="easter"] .side .logo {
+        color: #f0c8d8;
+      }
+      html:not(.bp)[data-season="easter"] .side {
+        border-color: #3b3045;
+        background-color: var(--bg);
+        background-image:
+          linear-gradient(180deg, #181521f5, #100f17f7),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23d9a8d1' stroke-opacity='.42' stroke-width='2'%3E%3Cpath d='M50 18c-8 0-19 10-19 25 0 17 10 34 19 42 9-8 19-25 19-42 0-15-11-25-19-25zM31 43h38M34 55h32M40 67h20'/%3E%3Cpath d='M18 18v12m-6-6h12M82 27v12m-6-6h12'/%3E%3C/svg%3E");
+        background-size: cover, 100px 100px;
+        background-repeat: no-repeat;
+        background-position: center, right bottom;
+      }
+      html:not(.bp)[data-season="easter"] .hero {
+        background-color: #17131d;
+        background-image:
+          linear-gradient(115deg, #191523d9, #271827cc),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23e9bfd4' stroke-opacity='.68' stroke-width='2'%3E%3Cpath d='M50 62c-13 0-22-9-22-22 0-9 5-18 12-18 6 0 8 8 10 17 2-9 4-17 10-17 7 0 12 9 12 18 0 13-9 22-22 22zM42 61l-7 11 15-5 15 5-7-11'/%3E%3Ccircle cx='45' cy='42' r='1' fill='%23e9bfd4'/%3E%3Ccircle cx='55' cy='42' r='1' fill='%23e9bfd4'/%3E%3C/svg%3E"),
+          url(hero-bg.jpg);
+        background-size: cover, 100px 100px, cover;
+        background-repeat: no-repeat;
+        background-position: center, right top, center;
+      }
+      html:not(.bp)[data-season="easter"] .hero::before {
+        background: linear-gradient(180deg, #100c17a8, #251627b8);
+      }
+      html:not(.bp)[data-season="easter"] .btn {
+        background: linear-gradient(115deg, #563260, #663447);
+        border-color: #795883;
+      }
+      html:not(.bp)[data-season="easter"] .btn:hover {
+        background: linear-gradient(115deg, #70407b, #814358);
+      }
+      html:not(.bp)[data-season="easter"] .stat .ms,
+      html:not(.bp)[data-season="easter"] .plan li .ms,
+      html:not(.bp)[data-season="easter"] .side .sm .ms {
+        color: #e5a5bb;
+      }
+      html:not(.bp)[data-season="christmas"] .pill {
+        border-color: #3b5940;
+        background: #18271e;
+        color: #e7d19c;
+      }
+      html:not(.bp)[data-season="easter"] .pill {
+        border-color: #57405f;
+        background: #251c2d;
+        color: #edbdd1;
+      }
+      html:not(.bp)[data-season="christmas"] .sheet > div {
+        border-color: #354839;
+        background: linear-gradient(145deg, #172019, #111713);
+      }
+      html:not(.bp)[data-season="easter"] .sheet > div {
+        border-color: #45384c;
+        background: linear-gradient(145deg, #1d1824, #14121b);
+      }
+      html:not(.bp)[data-season="christmas"] :focus-visible {
+        outline-color: #e6ca82;
+      }
+      html:not(.bp)[data-season="easter"] :focus-visible {
+        outline-color: #e5a5bb;
+      }
+      html:not(.bp) #v-cfg .theme-option {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        min-height: 68px;
+        margin: 0 0 10px;
+        padding: 10px 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--card2);
+        color: var(--tx);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+      }
+      html:not(.bp) #v-cfg .theme-option:hover {
+        transform: translateY(-1px);
+        border-color: var(--pl);
+      }
+      html:not(.bp) #v-cfg .theme-option[aria-pressed="true"] {
+        border-color: var(--pl);
+        background: color-mix(in srgb, var(--pl) 12%, var(--card2));
+      }
+      html:not(.bp) #v-cfg .theme-option .ms {
+        color: var(--pl);
+        font-size: 30px;
+      }
+      html:not(.bp) #v-cfg .theme-option small {
+        display: block;
+        margin-top: 2px;
+        color: var(--mu);
+        font-size: 13px;
+      }
+      html:not(.bp) #v-cfg .theme-option .theme-check {
+        visibility: hidden;
+        color: var(--pl);
+      }
+      html:not(.bp) #v-cfg .theme-option[aria-pressed="true"] .theme-check {
+        visibility: visible;
+      }
+      @media (max-width: 700px) {
+        html:not(.bp) #v-cfg .theme-option {
+          min-height: 62px;
+          gap: 10px;
+          padding: 9px 12px;
+        }
+      }
+      html[data-season="halloween"] body.app #v-dash .halloween-kicker,
+      html[data-season="halloween"] body.app #v-dash .halloween-kicker .ms {
+        color: #ffb36b;
+      }
+      html[data-season="christmas"] body.app #v-dash .halloween-hero {
+        border-color: #38533b;
+        background:
+          radial-gradient(ellipse at 85% 115%, #b83c4629, transparent 40%),
+          linear-gradient(112deg, #14221a, #111b16 58%, #1b1716);
+      }
+      html[data-season="christmas"] body.app #v-dash .halloween-kicker,
+      html[data-season="christmas"] body.app #v-dash .halloween-kicker .ms {
+        color: #e9c778;
+      }
+      html[data-season="christmas"] body.app #v-dash .halloween-hero p {
+        color: #c2cec2;
+      }
+      html[data-season="easter"] body.app #v-dash .halloween-hero {
+        border-color: #49364f;
+        background:
+          radial-gradient(ellipse at 84% 120%, #d874a333, transparent 40%),
+          linear-gradient(112deg, #211827, #191521 56%, #211827);
+      }
+      html[data-season="easter"] body.app #v-dash .halloween-kicker,
+      html[data-season="easter"] body.app #v-dash .halloween-kicker .ms {
+        color: #e8aac5;
+      }
+      html[data-season="easter"] body.app #v-dash .halloween-hero p {
+        color: #cabed0;
+      }
     </style>
   </head>
   <body>
@@ -6707,6 +7537,48 @@
       </nav>
 
       <header class="hero">
+        <svg class="christmas-flight-original" viewBox="0 0 360 140" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="#f4e3b2" stroke-linecap="round" stroke-width="2" opacity=".72">
+            <path d="M25 42h5m8-15 2 4m9-14v5m13 4-4 3m16 2h-5M91 31h5m9-12 2 4m14 7-4 3" />
+          </g>
+          <path d="M203 69c34-6 54-5 87 1" fill="none" stroke="#d7b76b" stroke-width="2" />
+          <g fill="#9a603c" stroke="#e2bc82" stroke-width="1.5" stroke-linejoin="round">
+            <ellipse cx="306" cy="69" rx="14" ry="8" />
+            <path d="m312 65 8-13 12 2 7 11-8 8-13-1z" />
+          </g>
+          <path d="m301 75-4 16m13-15-1 17m19-18 4 15m-4-15 8-10 5 1" fill="none" stroke="#6b3828" stroke-width="2.5" stroke-linecap="round" />
+          <path d="m328 53 5-9 1 9 8-6-4 10m-15-4-2-9-3 9-7-5 3 9" fill="none" stroke="#d7b76b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="328" cy="61" r="1.5" fill="#302b24" />
+          <path d="m336 66 6 2-6 2" fill="#d86a54" />
+          <!-- Sleigh silhouette: Font Awesome Free 6.7.2, CC BY 4.0: https://fontawesome.com/icons/sleigh -->
+          <g transform="translate(30 55) scale(.42 .13)" fill="#a83c36" stroke="#e3c27b" stroke-width="8" stroke-linejoin="round">
+            <path d="M32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l0 160c0 53 43 96 96 96l0 32 64 0 0-32 192 0 0 32 64 0 0-32c53 0 96-43 96-96l0-96c17.7 0 32-14.3 32-32s-14.3-32-32-32l-32 0-32 0c-17.7 0-32 14.3-32 32l0 41.3c0 30.2-24.5 54.7-54.7 54.7c-75.5 0-145.6-38.9-185.6-102.9l-4.3-6.9C174.2 67.6 125 37.6 70.7 32.7c-2.2-.5-4.4-.7-6.7-.7l-9 0L32 32zM640 384c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 8c0 13.3-10.7 24-24 24L64 416c-17.7 0-32 14.3-32 32s14.3 32 32 32l488 0c48.6 0 88-39.4 88-88l0-8z" />
+          </g>
+          <g stroke-linecap="round" stroke-linejoin="round">
+            <path d="M144 78c3-14 14-23 27-23s25 9 28 23l5 14h-65z" fill="#b83d43" stroke="#e1c57d" stroke-width="1.5" />
+            <path d="M147 88h55l4 5h-63z" fill="#f4ead5" stroke="#e1c57d" stroke-width="1" />
+            <path d="M150 91h51l-4 13h-43z" fill="#a7353b" stroke="#e1c57d" stroke-width="1.5" />
+            <path d="M162 98h29" stroke="#f3d37e" stroke-width="3" />
+            <circle cx="174" cy="42" r="17" fill="#e2c29a" stroke="#f4ead5" stroke-width="1.5" />
+            <path d="M158 40c1-15 9-23 21-23 10 0 18 7 19 19-12-5-25-3-40 4z" fill="#b83d43" stroke="#e1c57d" stroke-width="1.5" />
+            <path d="M158 38c10-4 27-5 40-1l1 7c-13-3-27-3-42 2z" fill="#fff5e8" stroke="#e1c57d" stroke-width="1" />
+            <circle cx="198" cy="25" r="5" fill="#fff5e8" stroke="#e1c57d" stroke-width="1" />
+            <path d="M160 49c5 4 10 3 15 0 5 4 10 4 16 0l-4 13c-3 6-7 9-12 9s-10-3-13-9z" fill="#fff5e8" stroke="#e1c57d" stroke-width="1" />
+            <circle cx="169" cy="43" r="1.5" fill="#49352c" stroke="none" />
+            <circle cx="181" cy="43" r="1.5" fill="#49352c" stroke="none" />
+          </g>
+        </svg>
+        <svg class="christmas-tree-original" viewBox="0 0 120 132" aria-hidden="true" focusable="false">
+          <path d="m60 5 5 13 14 1-10 9 3 13-12-7-12 7 3-13-10-9 14-1z" fill="#f3d37e" />
+          <path d="m60 24-18 29h12L34 74h17L28 98h64L69 74h17L66 53h12z" fill="#27674b" stroke="#a9c98e" stroke-width="2" stroke-linejoin="round" />
+          <path d="m60 24-18 29h12L34 74h17L28 98h64L69 74h17L66 53h12z" fill="url(#tree-sheen)" opacity=".42" />
+          <circle cx="48" cy="61" r="3" fill="#e89c74" /><circle cx="72" cy="68" r="3" fill="#f0d17d" />
+          <circle cx="44" cy="86" r="3" fill="#db7781" /><circle cx="76" cy="88" r="3" fill="#e9c977" />
+          <path d="M54 98h12v17H54z" fill="#71462f" stroke="#d2a273" stroke-width="2" />
+          <path d="M15 118h90" stroke="#e8d8b7" stroke-width="2" stroke-linecap="round" opacity=".8" />
+          <defs><linearGradient id="tree-sheen" x1="30" y1="30" x2="90" y2="100" gradientUnits="userSpaceOnUse"><stop stop-color="#fff" stop-opacity=".42" /><stop offset="1" stop-color="#102c20" stop-opacity=".05" /></linearGradient></defs>
+        </svg>
+        <img class="christmas-tree" src="assets/christmas/tree.svg" alt="" aria-hidden="true" />
         <div class="wrap">
           <h1>Tudo o que você quer, bem aqui.</h1>
           <p>
@@ -7276,7 +8148,7 @@
         <button class="x" id="audX" aria-label="Fechar"><span class="ms" style="font-size: 26px">close</span></button>
         <h3>Gerenciador de música e áudio</h3>
         <p style="font-size: 21px; margin: 0 0 16px">
-          Adicione um arquivo seu ou um link do Spotify/YouTube. Para ativar uma música, selecione-a clicando.
+          Adicione seus arquivos de áudio. Para ativar uma música, selecione-a clicando.
         </p>
         <a class="prm" href="#" data-buy="premium" style="font-size: 23px; padding: 26px 14px; margin: 0 0 22px"
           >Premium grátis temporariamente: adicione até 4 áudios</a
@@ -7314,13 +8186,8 @@
             <span class="ms" style="font-size: 44px; display: block; margin: 0 auto 8px; color: #fff">music_note</span
             ><span id="naF">Clique para enviar um arquivo de áudio</span>
           </div></label>
-          <label for="naUrl" style="display: block; font-size: 16px; margin: 0 0 8px">Link do Spotify ou YouTube</label>
-          <div class="url">
-            <span class="ms" style="font-size: 24px; color: #999">link</span>
-            <input id="naUrl" type="url" placeholder="Cole o link da música ou vídeo" />
-          </div>
           <p class="mu" style="font-size: 14px; margin: 8px 0 0">
-            Envie um arquivo ou cole um link; ele toca no player oficial.
+            Envie um arquivo de áudio para tocar no perfil.
           </p>
         </div>
         <label class="up" style="min-height: 130px; cursor: pointer; margin-bottom: 18px"
@@ -7369,7 +8236,51 @@
         ></span>
       </div>
       <main class="page">
-        <h1>Visão geral da conta</h1>
+        <section class="halloween-hero" aria-label="Painel com tema sazonal">
+          <div class="halloween-kicker">
+            <span class="ms" data-season="halloween" aria-hidden="true">dark_mode</span>
+            <span class="ms" data-season="easter" aria-hidden="true">egg_alt</span>
+            <span class="ms" data-season="christmas" aria-hidden="true">ac_unit</span>
+            <span class="halloween-kicker-label" data-season="halloween">Seu painel, depois do anoitecer</span>
+            <span class="halloween-kicker-label" data-season="easter">Uma primavera cheia de novidades</span>
+            <span class="halloween-kicker-label" data-season="christmas">Um painel cheio de magia natalina</span>
+          </div>
+          <h1>Visão geral da conta</h1>
+          <p data-season="halloween">
+            Seu espaço para acompanhar o perfil e cuidar de cada detalhe. Entre, se quiser… a teia já está pronta.
+          </p>
+          <p data-season="easter">
+            Seu espaço para acompanhar o perfil e cuidar de cada detalhe. Um toque de cor para renovar sua página.
+          </p>
+          <p data-season="christmas">
+            Seu espaço para acompanhar o perfil e cuidar de cada detalhe. Que a magia do Natal acompanhe sua página.
+          </p>
+          <svg class="halloween-web" viewBox="0 0 220 220" fill="none" aria-hidden="true">
+            <path d="M220 0H0V220M220 0L0 220M110 0L0 110M220 110L110 0M0 0L220 220M0 110L110 220M110 220L220 110M220 0V220M0 0H220" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M30 0C27 26 17 42 0 50M62 0C57 48 40 77 0 92M94 0C86 69 62 110 0 136M0 30C26 27 42 17 50 0M0 62C48 57 77 40 92 0M0 94C69 86 110 62 136 0M126 0C118 89 73 145 0 174M0 126C89 118 145 73 174 0M158 0C148 111 91 181 0 207M0 158C111 148 181 91 207 0" stroke="currentColor" stroke-width=".8" opacity=".8"/>
+          </svg>
+          <div class="halloween-spider" aria-hidden="true">
+            <svg viewBox="0 0 48 67" fill="none">
+              <path d="M24 0V19" stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="24" cy="27" r="5" fill="#e9955c"/>
+              <ellipse cx="24" cy="38" rx="7" ry="9" fill="#d9b2c5"/>
+              <path d="M19 30L9 25 4 29M18 35L8 35 3 40M19 41L10 47 5 46M21 45L15 55 10 57M29 30L39 25 44 29M30 35L40 35 45 40M29 41L38 47 43 46M27 45L33 55 38 57" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="holiday-art christmas-art" aria-hidden="true">
+            <img src="assets/christmas/tree.svg" alt="" />
+          </div>
+          <div class="holiday-art easter-art" aria-hidden="true">
+            <svg viewBox="0 0 120 130" fill="none">
+              <path d="M60 50c-17 0-30 15-30 37 0 20 12 33 30 33s30-13 30-33c0-22-13-37-30-37Z" fill="#f1c1d2" stroke="#ffe6ef" stroke-width="2"/>
+              <path d="M44 55c-8-21-5-42 2-43 8-1 12 17 14 38M76 55c8-21 5-42-2-43-8-1-12 17-14 38" fill="#f3c7d7" stroke="#ffe6ef" stroke-width="2"/>
+              <path d="M32 79c17 10 39 10 56 0M31 94c18 11 40 11 58 0" stroke="#ad72be" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="51" cy="72" r="2" fill="#36283b"/><circle cx="69" cy="72" r="2" fill="#36283b"/>
+              <path d="m57 78 3 3 3-3" stroke="#a35c77" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M24 37c0 4-3 7-7 7s-7-3-7-7 7-12 7-12 7 8 7 12ZM108 24c0 3-2 5-5 5s-5-2-5-5 5-9 5-9 5 6 5 9Z" fill="#e5a5bb"/>
+            </svg>
+          </div>
+        </section>
         <div class="grid">
           <div class="dc2">
             <span>Nome de usuário</span><span class="ms" style="font-size: 34px" aria-hidden="true">edit</span
@@ -7937,15 +8848,15 @@
               >Configurações de brilho
               <span
                 class="q2"
-                data-tip="Ativa um brilho na cor de destaque no nome de usuário, nas redes e/ou nos badges do perfil."
+                data-tip="Escolha separadamente onde aplicar o brilho na cor de destaque."
                 tabindex="0"
                 role="button"
                 >?</span
               ></label
             >
             <div class="sw2">
-              <button data-g="u">Nome de usuário</button><button data-g="r">Redes</button
-              ><button data-g="b">Badges</button>
+              <button data-g="u">Nome</button><button data-g="bio">Bio</button><button data-g="bg">Fundo</button
+              ><button data-g="p">Card</button><button data-g="r">Redes</button><button data-g="b">Badges</button>
             </div>
           </div>
         </div>
@@ -8112,8 +9023,11 @@
         <div class="mdh">
           <span class="ms" aria-hidden="true">library_add</span>
           <div>
-            <h1>Encontre o template perfeito da gnay para seu perfil</h1>
-            <p class="mu">Explore templates da comunidade ou crie o seu para compartilhar com todos na gnay.</p>
+            <h1>Templates da gnay</h1>
+            <p class="mu">
+              Salve uma cópia completa da sua bio, com textos, links, cores, fundo, layout e músicas. Depois, use no seu
+              perfil ou publique na biblioteca para todos verem.
+            </p>
           </div>
         </div>
         <div class="mdt">
@@ -8124,7 +9038,8 @@
             ><button type="button" role="tab" data-t="mine">Meus envios</button>
           </div>
           <button class="btn" id="mdNew" type="button">
-            <span class="ms" style="font-size: 26px" aria-hidden="true">add_circle</span><span>Criar template</span>
+            <span class="ms" style="font-size: 26px" aria-hidden="true">add_circle</span
+            ><span>Salvar minha bio como template</span>
           </button>
         </div>
         <div id="mdFil">
@@ -8170,8 +9085,8 @@
           </button>
         </div>
         <p class="mdsh-d" id="mdShD">
-          Salve sua bio atual como template: cores, fundo, layout, textos, links e músicas. A visibilidade começa como
-          pública, para compartilhar na biblioteca da gnay.
+          Será salva uma cópia completa da sua bio atual, incluindo textos, links, avatar, cores, fundo, layout e músicas.
+          A visibilidade começa como pública; você pode escolher privado ou não listado antes de salvar.
         </p>
         <section class="mdsec">
           <span class="mdlb">Prévia do template</span>
@@ -8253,6 +9168,7 @@
               <option value="unlisted">Não listado</option></select
             ><span class="ms mdar" aria-hidden="true">unfold_more</span></label
           >
+          <small class="mdhint">Público: aparece para todos na biblioteca. Não listado: só quem tem o link. Privado: só você.</small>
         </section>
         <label class="mdchk" id="mdRefW" hidden=""
           ><input type="checkbox" id="mdRef" /><span>Atualizar com a minha configuração atual</span></label
@@ -8429,6 +9345,28 @@
             <svg width="34" height="34" style="color: #fff" aria-hidden="true"><use href="#dsc"></use></svg
             ><span class="dtag">—</span>
           </div>
+        </div>
+        <h2 class="cs">Tema visual</h2>
+        <div class="cb">
+          <p>Escolha a decoração sazonal do site. A bio pública de cada pessoa mantém o visual escolhido por ela.</p>
+          <button class="theme-option" type="button" data-visual-theme="christmas" aria-pressed="false">
+            <span class="ms" aria-hidden="true">ac_unit</span>
+            <span>Natal<small>Neve, luzes e ilustrações do Papai Noel e dos duendes</small></span>
+            <span class="ms theme-check" aria-hidden="true">check_circle</span>
+          </button>
+          <button class="theme-option" type="button" data-visual-theme="easter" aria-pressed="false">
+            <span class="ms" aria-hidden="true">egg_alt</span>
+            <span>Páscoa<small>Cores de primavera, coelhinhos e ovos decorados</small></span>
+            <span class="ms theme-check" aria-hidden="true">check_circle</span>
+          </button>
+          <button class="theme-option" type="button" data-visual-theme="halloween" aria-pressed="false">
+            <span class="ms" aria-hidden="true">dark_mode</span>
+            <span>Halloween<small>Abóboras, teias e criaturas da noite</small></span>
+            <span class="ms theme-check" aria-hidden="true">check_circle</span>
+          </button>
+          <p id="visualThemeStatus" class="mu" role="status" style="font-size: 14px; margin-top: 8px">
+            A escolha fica salva neste navegador.
+          </p>
         </div>
         <h2 class="cs">Configurações de idioma</h2>
         <div class="cb">
@@ -8913,6 +9851,28 @@
     <script>
       const $ = (s) => document.querySelector(s),
         $$ = (s) => document.querySelectorAll(s);
+      const VISUAL_THEMES = new Set(["christmas", "easter", "halloween"]);
+      function setVisualTheme(theme, persist) {
+        const selected = VISUAL_THEMES.has(theme) ? theme : "christmas";
+        document.documentElement.dataset.season = selected;
+        $$("[data-visual-theme]").forEach((button) =>
+          button.setAttribute("aria-pressed", button.dataset.visualTheme === selected ? "true" : "false"),
+        );
+        if (persist) {
+          try {
+            localStorage.setItem("gnay_visual_theme", selected);
+            $("#visualThemeStatus").textContent = "Tema salvo neste navegador.";
+          } catch (error) {
+            $("#visualThemeStatus").textContent = "Não foi possível salvar o tema neste navegador.";
+            console.error("Falha ao salvar o tema visual:", error);
+          }
+        }
+      }
+      setVisualTheme(document.documentElement.dataset.season || "christmas", false);
+      $("#v-cfg").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-visual-theme]");
+        if (button) setVisualTheme(button.dataset.visualTheme, true);
+      });
       const LOGOS = {
         Snapchat: [
           "0 0 24 24",
@@ -9172,6 +10132,7 @@
           ly = h === "layout",
           cz = h === "customizacao",
           lg = h === "logimcomgnay";
+        document.documentElement.classList.toggle("bp", !!prof);
         $("#v-home").classList.toggle(
           "on",
           !dash && !st && !lk && !pz && !bd && !md && !cf && !tp && !pr && !pf && !ly && !cz && !lg && !prof,
@@ -9284,6 +10245,7 @@
           "Galeria de imagens com links diretos|Uploads rápidos e seguros (até 15 MB)|Análises de uploads (visualizações)|Badge exclusivo|Domínios personalizados (em breve)|Criar e compartilhar textos (em breve)",
         ],
       };
+      const GNAY_DISCORD_INVITE = "https://discord.gg/gnay";
       $("#closeBuy").onclick = () => $("#buy").classList.remove("open");
       $("#buyGo").onclick = () => {
         toast("Os pagamentos estão em manutenção. Tente novamente mais tarde.");
@@ -9322,9 +10284,7 @@
         ["Bug Hunter", "Reporte um bug para a equipe gnay.", "3fb950", "Reportar", "", "bug_report"],
         ["Summer 2026", "Badge exclusivo da promoção de verão 2026.", "fbbf24", "", "", "wb_sunny"],
         ["Easter 2026", "Badge exclusivo da promoção de Páscoa 2026.", "8b7bff", "", "", "cruelty_free"],
-        ["Christmas 2025", "Badge exclusivo da promoção de inverno 2025.", "7dd3fc", "", "", "ac_unit"],
-        ["Easter 2025", "Badge exclusivo da promoção de Páscoa 2025.", "f9a8d4", "", "", "egg"],
-        ["Christmas 2024", "Badge exclusivo da promoção de inverno 2024.", "ef4444", "", "", "park"],
+        ["Christmas 2026", "Badge exclusivo da promoção de inverno 2026.", "7dd3fc", "", "", "ac_unit"],
         ["The Million", "Badge de celebração por 1M usuários.", "2dd4bf", "", "", "celebration"],
         ["Winner", "Ganhe um evento da gnay.", "facc15", "", "", "emoji_events"],
         ["Second Place", "Fique em segundo lugar em um evento da gnay.", "9ca3af", "", "", "workspace_premium"],
@@ -9911,7 +10871,8 @@
         syncAgain = false,
         syncWarn = 0,
         syncDirty = false,
-        syncLock = false;
+        syncLock = false,
+        syncError = null;
       function syncP() {
         if (!S || syncLock) return;
         syncDirty = true;
@@ -9928,6 +10889,7 @@
         syncBusy = true;
         const who = S;
         syncDirty = false;
+        syncError = null;
         try {
           const r = await api("PUT", "/api/profile", { profile: P });
           if (S === who && !syncLock) {
@@ -9935,6 +10897,7 @@
             saveLocal();
           }
         } catch (e) {
+          syncError = e;
           if (e.status === 409) {
             syncLock = true;
             syncDirty = false;
@@ -10138,7 +11101,6 @@
         apply();
         updateHomeCta();
         if (!prof0 || (S && (h0 === S || ALM()[h0] === S))) route();
-        else document.documentElement.classList.remove("bp");
       }
 
       function myPage() {
@@ -10176,6 +11138,7 @@
         syncMedia();
         updateHomeCta();
         syncMfaSw();
+        loadProfileTemplates();
       }
       $("#closeAuth").onclick = () => {
         navTo("");
@@ -11045,34 +12008,6 @@
         } catch (e) {}
         return null;
       }
-      async function fetchAudioInfo(parsed) {
-        if (!parsed || !["spotify", "youtube"].includes(parsed.provider)) return null;
-        const response = await fetch(
-          "/api/audio-info?provider=" +
-            encodeURIComponent(parsed.provider) +
-            "&id=" +
-            encodeURIComponent(parsed.id),
-        );
-        if (!response.ok) {
-          let message = "Não foi possível carregar o título e a capa dessa música.";
-          try {
-            const data = await response.json();
-            if (data && data.error) message = data.error;
-          } catch (e) {}
-          throw new Error(message);
-        }
-        const data = await response.json();
-        return {
-          title: typeof data.title === "string" ? data.title.trim().slice(0, 200) : "",
-          image:
-            typeof data.image === "string" &&
-            (parsed.provider === "spotify"
-              ? /^https:\/\/(image-cdn-ak\.spotifycdn\.com|image-cdn\.scdn\.co|i\.scdn\.co)\//.test(data.image)
-              : /^https:\/\/i\.ytimg\.com\//.test(data.image))
-              ? data.image
-              : "",
-        };
-      }
       let spotifyIframeApiPromise;
       function loadSpotifyIframeApi() {
         if (window.SpotifyIframeApi) return Promise.resolve(window.SpotifyIframeApi);
@@ -11118,9 +12053,8 @@
         presence = presence || {};
         const premiumType = Number(user.premium_type || presence.premium_type) || 0;
         const badges = [];
-        if ([1, 2, 3].includes(premiumType) || user.nitro === true || presence.nitro === true) {
+        if ([1, 2, 3].includes(premiumType) || user.nitro === true || presence.nitro === true)
           badges.push(["Nitro", "diamond"]);
-        }
         const boostSince =
           user.premium_since ||
           presence.premium_since ||
@@ -11134,6 +12068,34 @@
           badges.push(["Impulsionador do servidor", "rocket_launch"]);
         }
         return badges;
+      }
+      function dcPremiumIcon(name) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("width", "30");
+        svg.setAttribute("height", "30");
+        svg.setAttribute("aria-hidden", "true");
+        svg.style.display = "block";
+        const add = (tag, attrs) => {
+          const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+          Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+          svg.appendChild(el);
+        };
+        if (name === "Nitro") {
+          add("path", {
+            d: "M5 3.5 19 3.5 23 9 12 22 1 9Z",
+            fill: "#b78cff",
+          });
+          add("path", { d: "M5 3.5 9 9 12 22 1 9Z", fill: "#8b5cf6" });
+          add("path", { d: "M19 3.5 15 9 12 22 23 9Z", fill: "#d8b4fe" });
+          add("path", { d: "M5 3.5 19 3.5 15 9 9 9Z", fill: "#e9d5ff" });
+        } else {
+          add("path", {
+            d: "M14.4 2.2c-3.8 1.1-7.5 4.8-8.6 8.6l-.6 2.1 5.9 5.9 2.1-.6c3.8-1.1 7.5-4.8 8.6-8.6.7-2.4.8-5.3.8-7.4-2.1 0-5 .1-7.4.8ZM16.7 9a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.2 14.8l4 4c-2.1.4-4.5 1.8-6.1 3.8-.1-3.3.7-6 2.1-7.8Z",
+            fill: "#f47fff",
+          });
+        }
+        return svg;
       }
       const DC_VB = ["Jogando", "Transmitindo", "Ouvindo", "Assistindo", "", "Competindo"];
       function dcFetch(id) {
@@ -11305,14 +12267,16 @@
           st.style.color = s[0];
           st.style.fontVariationSettings = "'FILL' 1";
           bd.innerHTML = "";
-          dcPremiumBadges(u, d).forEach(([name, icon]) => {
+          dcPremiumBadges(
+            Object.assign({}, u, {
+              premium_type: account ? account.premiumType : u.premium_type,
+            }),
+            d,
+          ).forEach(([name]) => {
             const badge = document.createElement("span");
             badge.title = name;
             badge.setAttribute("aria-label", name);
-            const mark = document.createElement("span");
-            mark.className = "ms";
-            mark.textContent = icon;
-            badge.appendChild(mark);
+            badge.appendChild(dcPremiumIcon(name));
             bd.appendChild(badge);
           });
           bd.style.display = bd.children.length ? "" : "none";
@@ -12399,12 +13363,12 @@
             preview: pv,
             audio: au,
           };
-          if (!mdEdit || $("#mdRef").checked) body.profile = P; /* copia o visual que a pessoa está usando agora */
           if (mdEdit) {
             if ($("#mdRef").checked) {
               clearTimeout(syncT);
               syncT = 0;
               await doSync();
+              body.profile = JSON.parse(JSON.stringify(P));
               body.refresh = true;
             }
             await api("PATCH", "/api/templates/" + mdEdit.id, body);
@@ -12413,6 +13377,7 @@
             clearTimeout(syncT);
             syncT = 0;
             await doSync();
+            body.profile = JSON.parse(JSON.stringify(P));
             await api("POST", "/api/templates", body);
             toast("Template criado!");
             mdShared = 0;
@@ -12758,16 +13723,19 @@
       function profDOM(Q, ow, opt) {
         opt = opt || {};
         const cp = (Q.projects || []).find((x) => x.id === Q.cz);
-        if (cp && !opt.prev) return czPublic(cp, opt);
+        if (cp && !opt.prev) return czPublic(cp, opt, Q);
         const bg = Q.c_bg || "#0b0b0b",
           tx = Q.c_tx || "#ffffff",
           ac = Q.c_acc || "#535465",
-          ic = Q.c_ic || "#8c8c8c";
+          ic = Q.c_ic || "#8c8c8c",
+          GL = Q.gl || {},
+          glc = Q.c_acc || tx;
         const late = [];
         let gated = false;
         const root = document.createElement("div");
         root.className = "pf pfr";
         root.style.cssText = "color:" + tx + ";background-color:" + bg;
+        if (GL.bg) root.style.boxShadow = "inset 0 0 100px 16px " + glc;
         if (Q.bg) {
           const isVideoBg = /\.(mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i.test(String(Q.bg));
           const bi = document.createElement(isVideoBg ? "video" : "img");
@@ -12830,7 +13798,11 @@
         c.className = "pfc ly-" + (Q.ly || "vidro");
         c.style.setProperty("--ac", ac);
         if (Q.ly !== "centro") gls(c);
-        if (Q.shCard) c.style.boxShadow = "0 10px 70px rgba(0,0,0,.65)";
+        if (Q.shCard || GL.p)
+          c.style.boxShadow =
+            (Q.shCard ? "0 10px 70px rgba(0,0,0,.65)" : "") +
+            (Q.shCard && GL.p ? "," : "") +
+            (GL.p ? "0 0 32px " + glc : "");
         if (Q.tg && Q.tg["Borda do card"]) c.style.border = "1px solid rgba(255,255,255,.2)";
         const hd = document.createElement("div");
         hd.className = "pfh";
@@ -12891,9 +13863,7 @@
         const tb = document.createElement("div");
         tb.className = "pft";
         const nm = document.createElement("h1");
-        nm.textContent = Q.dn || ow;
-        const GL = Q.gl || {},
-          glc = Q.c_acc || tx;
+        profileName(nm, Q.dn || ow, Q.nameFx);
         if (GL.u) nm.style.textShadow = "0 0 10px " + glc + ",0 0 28px " + glc;
         const ob = bdSort(
           ownedB(ow).filter((n) => !(Q.bdHide || []).includes(n)),
@@ -12956,34 +13926,40 @@
             })
             .catch(() => {});
         }
+        const paintDcPremiumBadges = (entries) => {
+          if (!entries.length) return;
+          let row = nr.querySelector(".dc-public-badges");
+          if (!row) {
+            row = document.createElement("div");
+            row.className = "bw dc-public-badges";
+            if (GL.b) row.style.filter = "drop-shadow(0 0 8px " + glc + ")";
+            nr.appendChild(row);
+          }
+          row.replaceChildren();
+          entries.forEach(([name]) => {
+            const badge = document.createElement("span");
+            badge.className = "bdi";
+            badge.tabIndex = 0;
+            badge.dataset.n = name;
+            badge.setAttribute("aria-label", name);
+            badge.appendChild(dcPremiumIcon(name));
+            row.appendChild(badge);
+          });
+        };
+        paintDcPremiumBadges(dcPremiumBadges({ premium_type: Q.dcPremiumType }, {}));
         if (Q.dcId && /^\d{15,25}$/.test(String(Q.dcId))) {
           dcFetch(Q.dcId)
             .then((d) => {
               if (!nr.isConnected) return;
-              const user = d.discord_user || {},
-                entries = dcPremiumBadges(user, d);
-              if (!entries.length) return;
-              let row = nr.querySelector(".dc-public-badges");
-              if (!row) {
-                row = document.createElement("div");
-                row.className = "bw dc-public-badges";
-                if (GL.b) row.style.filter = "drop-shadow(0 0 8px " + glc + ")";
-                nr.appendChild(row);
-              }
-              row.replaceChildren();
-              entries.forEach(([name, icon]) => {
-                const badge = document.createElement("span");
-                badge.className = "bdi";
-                badge.tabIndex = 0;
-                badge.dataset.n = name;
-                badge.setAttribute("aria-label", name);
-                const mark = document.createElement("span");
-                mark.className = "ms";
-                mark.style.fontSize = "30px";
-                mark.textContent = icon;
-                badge.appendChild(mark);
-                row.appendChild(badge);
-              });
+              const user = d.discord_user || {};
+              paintDcPremiumBadges(
+                dcPremiumBadges(
+                  Object.assign({}, user, {
+                    premium_type: Q.dcPremiumType === undefined ? user.premium_type : Q.dcPremiumType,
+                  }),
+                  d,
+                ),
+              );
             })
             .catch((error) => console.error("Falha ao carregar insígnias do Discord no perfil:", error));
         }
@@ -12991,6 +13967,7 @@
         if (Q.desc) {
           const d = document.createElement("p");
           d.className = "ds";
+          if (GL.bio) d.style.textShadow = "0 0 10px " + glc + ",0 0 24px " + glc;
           rich(d, Q.desc);
           tb.appendChild(d);
         }
@@ -13184,23 +14161,15 @@
             vol = v;
             a1.volume = v;
             a2.volume = v;
-            if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
-              const command = (func, args = []) =>
-                embedFrame.contentWindow.postMessage(
-                  JSON.stringify({ event: "command", func, args }),
-                  "https://www.youtube-nocookie.com",
-                );
-              if (v <= 0) command("mute");
-              else {
-                command("unMute");
-                command("setVolume", [Math.round(v * 100)]);
-              }
-            }
           };
           const sync = () => {
             const playing = embedProvider ? wantPlay : !au.paused;
-            if (vb) vb.firstChild.textContent = playing ? "pause" : "play_arrow";
-            if (pi) pi.textContent = playing ? "pause" : "play_arrow";
+            const icon = playing ? "pause" : "play_arrow";
+            if (vb) {
+              vb.firstChild.textContent = icon;
+              vb.setAttribute("aria-label", "Tocar ou pausar");
+            }
+            if (pi) pi.textContent = icon;
           };
           const play = () => {
             wantPlay = true;
@@ -13249,38 +14218,11 @@
               if (vr) vr.style.display = "";
             }
           };
-          const youtubeFrame = (parsed, autoplay) => {
-            const src = new URL(parsed.embed);
-            src.searchParams.set("autoplay", autoplay ? "1" : "0");
-            src.searchParams.set("enablejsapi", "1");
-            src.searchParams.set("controls", "1");
-            src.searchParams.set("playsinline", "1");
-            if (/^https?:$/.test(location.protocol)) src.searchParams.set("origin", location.origin);
-            embedFrame = document.createElement("iframe");
-            const frame = embedFrame;
-            frame.src = src.href;
-            frame.title = "Player de YouTube: " + A[ix].t;
-            frame.referrerPolicy = "strict-origin-when-cross-origin";
-            frame.allow = "autoplay; encrypted-media; picture-in-picture";
-            frame.style.cssText = "display:block;width:100%;height:100%;border:0";
-            const playVideo = () => {
-              if (!wantPlay || !frame.isConnected || !frame.contentWindow) return;
-              setVol(vol);
-              frame.contentWindow.postMessage(
-                JSON.stringify({ event: "command", func: "playVideo", args: [] }),
-                "https://www.youtube-nocookie.com",
-              );
-            };
-            frame.addEventListener("load", playVideo);
-            embedWrap.appendChild(frame);
-            if (autoplay) {
-              [0, 250, 750, 1500].forEach((delay) => setTimeout(playVideo, delay));
-            }
-          };
           const showEmbed = (itm) => {
             clearEmbed();
             const parsed = parseAudioLink(itm.url);
             if (!parsed || parsed.provider !== itm.provider) return;
+            embedProvider = itm.provider;
             if (pl) {
               pl.classList.add("pfp-provider");
               pl.dataset.provider = itm.provider;
@@ -13292,68 +14234,80 @@
               ",calc(100vw - 24px));height:" +
               (itm.provider === "youtube" ? "203px" : "152px") +
               ";overflow:hidden;border-radius:12px;background:#000;box-shadow:0 4px 24px rgba(0,0,0,.45)";
-            embedProvider = itm.provider;
             if (itm.provider === "youtube") {
-              youtubeFrame(parsed, wantPlay);
+              const src = new URL(parsed.embed);
+              src.searchParams.set("autoplay", "0");
+              src.searchParams.set("enablejsapi", "1");
+              src.searchParams.set("controls", "1");
+              src.searchParams.set("playsinline", "1");
+              if (/^https?:$/.test(location.protocol)) src.searchParams.set("origin", location.origin);
+              embedFrame = document.createElement("iframe");
+              embedFrame.src = src.href;
+              embedFrame.title = "Player de YouTube: " + itm.t;
+              embedFrame.referrerPolicy = "strict-origin-when-cross-origin";
+              embedFrame.allow = "autoplay; encrypted-media; picture-in-picture";
+              embedFrame.style.cssText = "display:block;width:100%;height:100%;border:0";
+              embedWrap.appendChild(embedFrame);
             } else {
               embedTarget = document.createElement("div");
               embedTarget.style.cssText = "width:300px;height:152px";
               embedWrap.appendChild(embedTarget);
             }
             root.appendChild(embedWrap);
-            if (itm.provider === "spotify") {
-              const target = embedTarget;
-              loadSpotifyIframeApi()
-                .then((api) => {
-                  if (!target.isConnected) return;
-                  api.createController(
-                    target,
-                    { uri: parsed.uri, width: 300, height: 152 },
-                    (controller) => {
-                      if (!target.isConnected) {
-                        controller.pause();
-                        return;
-                      }
-                      spotifyController = controller;
-                      if (enterSplash && enterSplash.isConnected) {
-                        enterSplash.querySelector(".pfs-title").textContent = Q.et || "clique para entrar";
-                        enterSplash.style.cursor = "pointer";
-                      }
-                      if (wantPlay) controller.play();
-                    },
-                  );
-                })
-                .catch((error) => {
-                  console.error("Falha ao iniciar o player oficial do Spotify:", error);
-                  if (!target.isConnected) return;
-                  embedFrame = document.createElement("iframe");
-                  const fallbackUrl = new URL(parsed.embed);
-                  if (wantPlay) fallbackUrl.searchParams.set("autoplay", "1");
-                  embedFrame.src = fallbackUrl.href;
-                  embedFrame.title = "Player de Spotify: " + itm.t;
-                  embedFrame.referrerPolicy = "strict-origin-when-cross-origin";
-                  embedFrame.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture";
-                  embedFrame.style.cssText = "display:block;width:300px;height:152px;border:0";
-                  target.replaceWith(embedFrame);
-                  embedTarget = null;
-                  embedWrap.style.height = "190px";
-                  const openSpotify = document.createElement("a");
-                  openSpotify.href = itm.url;
-                  openSpotify.target = "_blank";
-                  openSpotify.rel = "noopener noreferrer";
-                  openSpotify.textContent = "Abrir no Spotify";
-                  openSpotify.style.cssText =
-                    "display:block;box-sizing:border-box;width:100%;padding:10px;text-align:center;background:#1ed760;color:#000;font:600 14px sans-serif;text-decoration:none";
-                  embedWrap.appendChild(openSpotify);
-                  if (enterSplash && enterSplash.isConnected) {
-                    enterSplash.querySelector(".pfs-title").textContent = "Clique para entrar";
-                    enterSplash.style.cursor = "pointer";
-                  }
-                });
+            if (itm.provider === "youtube") {
+              sync();
+              return;
             }
+            const target = embedTarget;
+            loadSpotifyIframeApi()
+              .then((api) => {
+                if (!target.isConnected) return;
+                api.createController(
+                  target,
+                  { uri: parsed.uri, width: 300, height: 152 },
+                  (controller) => {
+                    if (!target.isConnected) {
+                      controller.pause();
+                      return;
+                    }
+                    spotifyController = controller;
+                    if (wantPlay) controller.play();
+                  },
+                );
+              })
+              .catch((error) => {
+                console.error("Falha ao iniciar o player oficial do Spotify:", error);
+                if (!target.isConnected) return;
+                embedFrame = document.createElement("iframe");
+                embedFrame.src = parsed.embed;
+                embedFrame.title = "Player de Spotify: " + itm.t;
+                embedFrame.referrerPolicy = "strict-origin-when-cross-origin";
+                embedFrame.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture";
+                embedFrame.style.cssText = "display:block;width:300px;height:152px;border:0";
+                target.replaceWith(embedFrame);
+                embedTarget = null;
+                embedWrap.style.visibility = "visible";
+              });
             sync();
           };
           const playEmbed = () => {
+            if (embedProvider === "youtube") {
+              if (!embedFrame) return;
+              embedWrap.style.visibility = "visible";
+              if (embedFrame.src && new URL(embedFrame.src).searchParams.get("autoplay") !== "1") {
+                const src = new URL(embedFrame.src);
+                src.searchParams.set("autoplay", "1");
+                embedFrame.src = src.href;
+              } else {
+                embedFrame.contentWindow?.postMessage(
+                  JSON.stringify({ event: "command", func: "playVideo", args: [] }),
+                  "https://www.youtube-nocookie.com",
+                );
+              }
+              wantPlay = true;
+              sync();
+              return;
+            }
             wantPlay = true;
             if (embedWrap) embedWrap.style.visibility = "visible";
             if (embedProvider === "spotify") {
@@ -13372,23 +14326,6 @@
               sync();
               return;
             }
-            if (embedProvider !== "youtube" || !embedFrame) {
-              sync();
-              return;
-            }
-            const src = new URL(embedFrame.src);
-            if (src.searchParams.get("autoplay") !== "1") {
-              src.searchParams.set("autoplay", "1");
-              embedFrame.src = src.href;
-            }
-            [0, 250, 750, 1500].forEach((delay) => setTimeout(() => {
-              if (!wantPlay || !embedFrame || !embedFrame.contentWindow) return;
-              embedFrame.contentWindow.postMessage(
-                JSON.stringify({ event: "command", func: "playVideo", args: [] }),
-                "https://www.youtube-nocookie.com",
-              );
-            }, delay));
-            sync();
           };
           vb = document.createElement("button");
           vb.className = "pfb";
@@ -13396,15 +14333,20 @@
           vb.innerHTML = '<span class="ms" style="font-size:26px">play_arrow</span>';
           const toggle = () => {
             if (embedProvider) {
+              if (embedProvider === "youtube") {
+                if (wantPlay) {
+                  wantPlay = false;
+                  embedFrame?.contentWindow?.postMessage(
+                    JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+                    "https://www.youtube-nocookie.com",
+                  );
+                  sync();
+                } else playEmbed();
+                return;
+              }
               wantPlay = !wantPlay;
               if (wantPlay) playEmbed();
               else if (embedProvider === "spotify" && spotifyController) spotifyController.pause();
-              else if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
-                embedFrame.contentWindow.postMessage(
-                  JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-                  "https://www.youtube-nocookie.com",
-                );
-              }
               sync();
               return;
             }
@@ -14703,7 +15645,6 @@
         $("#naGo").textContent = "Adicionar áudio";
         $("#naFile").value = "";
         $("#naCov").value = "";
-        $("#naUrl").value = "";
         $("#naT").value = "";
         $("#naE").textContent = "";
         $("#naF").textContent = "Clique para enviar um arquivo de áudio";
@@ -14740,7 +15681,6 @@
         };
         $("#naFile").value = "";
         $("#naCov").value = "";
-        $("#naUrl").value = a.url || "";
         $("#naT").value = a.t;
         $("#naE").textContent = "";
         $("#naF").textContent = "Trocar o arquivo de áudio (opcional)";
@@ -14763,7 +15703,6 @@
           $("#naE").textContent = "Áudio muito grande (máx. 1 GB).";
           return;
         }
-        $("#naUrl").value = "";
         const u = URL.createObjectURL(f),
           a = new Audio();
         a.preload = "metadata";
@@ -14820,55 +15759,10 @@
       $("#naT").oninput = () => {
         nA.nameEdited = true;
       };
-      $("#naUrl").oninput = (e) => {
-        const value = e.target.value.trim(),
-          sequence = (nA.infoSeq || 0) + 1;
-        nA.infoSeq = sequence;
-        delete nA.linkTitle;
-        delete nA.linkImage;
-        if (value) {
-          $("#naFile").value = "";
-          nA.file = null;
-          nA.mime = null;
-          delete nA.name;
-          delete nA.d;
-          const parsed = parseAudioLink(value);
-          if (!parsed) return;
-          $("#naE").textContent = "Buscando nome e capa da música…";
-          nA.infoPromise = fetchAudioInfo(parsed)
-            .then((info) => {
-              if (sequence !== nA.infoSeq) return;
-              nA.linkTitle = info && info.title;
-              nA.linkImage = info && info.image;
-              if (!nA.nameEdited && (nA.autoTitle || !$("#naT").value.trim()) && nA.linkTitle)
-                $("#naT").value = nA.linkTitle;
-              if (nA.linkImage && (!nA.edit || nA.autoCover || !nA.cover)) {
-                $("#naC").textContent = "Capa encontrada no " + (parsed.provider === "spotify" ? "Spotify" : "YouTube");
-              }
-              $("#naE").textContent = "";
-            })
-            .catch((error) => {
-              if (sequence !== nA.infoSeq) return;
-              console.error("Falha ao carregar os dados da faixa:", error);
-              $("#naE").textContent = error.message || "Não foi possível carregar o nome e a capa. Você ainda pode salvar o link.";
-              return null;
-            });
-        }
-      };
       $("#naGo").onclick = async () => {
         const ed = nA.edit ? (P.audios || []).find((x) => x.id === nA.edit) : null;
-        const linkValue = $("#naUrl").value.trim();
-        const link = linkValue ? parseAudioLink(linkValue) : null;
-        if (linkValue && !link) {
-          $("#naE").textContent = "Cole um link válido de faixa do Spotify ou vídeo do YouTube.";
-          return;
-        }
-        if (nA.file && link) {
-          $("#naE").textContent = "Escolha um arquivo ou um link, não os dois.";
-          return;
-        }
-        if (!ed && !nA.file && !link) {
-          $("#naE").textContent = "Envie um arquivo ou cole um link válido do Spotify/YouTube.";
+        if (!ed && !nA.file) {
+          $("#naE").textContent = "Envie um arquivo de áudio.";
           return;
         }
         if (!ed && (P.audios || []).length >= AUDLIM()) {
@@ -14879,7 +15773,6 @@
         btn.disabled = true;
         $("#naE").textContent = "Enviando…";
         try {
-        if (link && nA.infoPromise && (!nA.linkTitle || !nA.linkImage)) await nA.infoPromise;
         let media = ed
           ? {
                 src: ed.src,
@@ -14897,22 +15790,10 @@
               src: await upl(nA.file, nA.mime, (progress) => {
                 $("#naE").textContent = "Enviando " + progress + "%…";
               }),
+              cvAuto: false,
             };
             d = nA.d;
-          } else if (link) {
-            media = {
-              provider: link.provider,
-              url: link.url,
-              titleAuto: !nA.nameEdited && (!ed || nA.autoTitle),
-            };
-            d = 0;
-          }
-          if (link && nA.linkImage && (!ed || nA.autoCover || !nA.cover)) {
-            cv = nA.linkImage;
-            media.cvAuto = true;
-          } else if (link && ed && ed.cv && !ed.cvAuto) {
-            cv = ed.cv;
-            media.cvAuto = false;
+            if (ed && ed.cvAuto) cv = undefined;
           }
           if (nA.cvBlob) {
             cv = await upl(nA.cvBlob, "image/jpeg");
@@ -14920,9 +15801,8 @@
           }
           const t =
             $("#naT").value.trim().slice(0, 200) ||
-            nA.linkTitle ||
             (ed ? ed.t : nA.name) ||
-            (link ? (link.provider === "spotify" ? "Música do Spotify" : "Vídeo do YouTube") : "Áudio");
+            "Áudio";
           const title = t;
           if (ed) {
             ed.t = title;
@@ -14932,7 +15812,7 @@
             Object.assign(ed, media);
             ed.d = d;
             if (cv) ed.cv = cv;
-            else if (!link || media.cvAuto) delete ed.cv;
+            else delete ed.cv;
           } else {
             const a = { id: "a" + Date.now(), t: title, ...media, d };
             if (cv) a.cv = cv;
@@ -15211,7 +16091,7 @@
       }
       function rich(el, t) {
         el.textContent = "";
-        const re = /\[(\/?)(b|i|u|s|glow|rainbow|shake|c(?:=#[0-9a-fA-F]{3,8})?)\]/g;
+        const re = /\[(\/?)(b|i|u|s|glow|rainbow|shake|c(?:=#[0-9a-fA-F]{3,8})?|rgb(?:=#[0-9a-fA-F]{6},#[0-9a-fA-F]{6})?)\]/g;
         let cur = el,
           stk = [],
           last = 0,
@@ -15233,7 +16113,14 @@
             else if (n === "s") sp.style.textDecoration = "line-through";
             else if (n === "glow") sp.style.textShadow = "0 0 10px currentColor";
             else if (n === "rainbow") sp.className = "rnb";
-            else if (n === "shake") sp.className = "shk";
+            else if (n === "rgb") {
+              const colors = m[2].match(/#[0-9a-fA-F]{6}/g);
+              if (colors && colors.length === 2) {
+                sp.className = "rgb2";
+                sp.style.setProperty("--rgb-a", colors[0]);
+                sp.style.setProperty("--rgb-b", colors[1]);
+              }
+            } else if (n === "shake") sp.className = "shk";
             else sp.style.color = m[2].slice(2);
             cur.appendChild(sp);
             stk.push({ t: n, p: cur });
@@ -15241,6 +16128,52 @@
           }
         }
         tx(t.slice(last));
+      }
+      function profileName(el, text, effect) {
+        const value = String(text || "");
+        if (effect === "wave") {
+          el.className += " name-wave";
+          el.setAttribute("aria-label", value);
+          [...value].forEach((char, index) => {
+            const letter = document.createElement("span");
+            letter.textContent = char === " " ? "\u00a0" : char;
+            const duration = 2.4 + (index % 5) * 0.16;
+            letter.style.animationDuration = duration + "s";
+            letter.style.animationDelay = -((index * 0.37) % duration) + "s";
+            el.appendChild(letter);
+          });
+          return;
+        }
+        if (effect !== "hacker") {
+          el.textContent = value;
+          return;
+        }
+        el.className += " name-hacker";
+        el.setAttribute("aria-label", value);
+        const chars = [...value];
+        const letters = chars.map((char) => {
+          const letter = document.createElement("span");
+          letter.textContent = char === " " ? "\u00a0" : char;
+          letter.dataset.original = char;
+          el.appendChild(letter);
+          return letter;
+        });
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const alphabet = "01!<>/{}[]#$%";
+        const scramble = () => {
+          if (!el.isConnected) {
+            clearInterval(timer);
+            return;
+          }
+          letters.forEach((letter) => (letter.textContent = letter.dataset.original));
+          const candidates = letters.filter((letter) => letter.dataset.original.trim());
+          const amount = Math.max(1, Math.ceil(candidates.length * 0.2));
+          for (let i = 0; i < amount; i++) {
+            const letter = candidates[Math.floor(Math.random() * candidates.length)];
+            letter.textContent = alphabet[Math.floor(Math.random() * alphabet.length)];
+          }
+        };
+        let timer = setInterval(scramble, 140);
       }
       function bindK(root) {
         root.querySelectorAll("[data-k]").forEach((e) => {
@@ -15414,7 +16347,27 @@
           CB(
             CH("person", "Nome e bio") +
               FI("Nome de exibição", "dn", "Seu nome") +
-              '<span class="lb">Bio</span><div class="bwrap"><div class="tbr" id="bioT"><button type="button" data-w="b" title="Negrito">B</button><button type="button" data-w="i" title="Itálico">I</button><button type="button" data-w="u" title="Sublinhado">U</button><button type="button" data-w="s" title="Riscado">S</button><button type="button" data-w="glow" title="Brilho">Brilho</button><button type="button" data-w="rainbow" class="rnb" title="Arco-íris">Arco-íris</button><button type="button" data-w="shake" title="Tremer">Tremer</button><input type="color" id="bioC" value="#ff4d4d" aria-label="Cor do texto" title="Cor"><button type="button" id="bioL">Limpar</button></div><textarea id="bioTa" data-k="desc" maxlength="300" placeholder="Fale um pouco sobre você..."></textarea></div><div style="display:flex;justify-content:space-between;color:var(--mu);font-size:17px;margin:10px 4px 0"><span>Selecione um trecho e clique no estilo.</span><span id="bioN">0 letras</span></div>',
+              '<span class="lb">Animação do nome</span>' +
+              SG("nameFx", [
+                ["normal", "Normal"],
+                ["wave", "Ondas"],
+                ["hacker", "Hacker"],
+              ]) +
+              '<span class="lb">Bio</span><div class="bwrap"><div class="tbr" id="bioT"><button type="button" data-w="b" title="Negrito">B</button><button type="button" data-w="i" title="Itálico">I</button><button type="button" data-w="u" title="Sublinhado">U</button><button type="button" data-w="s" title="Riscado">S</button><button type="button" data-w="glow" title="Brilho">Brilho</button><button type="button" data-w="rainbow" class="rnb" title="Arco-íris RGB animado">Arco-íris</button><button type="button" data-w="shake" title="Tremer">Tremer</button><input type="color" id="bioC" value="#ff4d4d" aria-label="Cor do texto" title="Cor"><input type="color" class="bioC1" value="#00eaff" aria-label="Primeira cor do RGB" title="Primeira cor do RGB"><input type="color" class="bioC2" value="#ff38d1" aria-label="Segunda cor do RGB" title="Segunda cor do RGB"><button type="button" class="bioRgbApply" title="Aplicar gradiente animado com as duas cores">2 cores</button><button type="button" id="bioL">Limpar</button></div><textarea id="bioTa" data-k="desc" maxlength="300" placeholder="Fale um pouco sobre você..."></textarea></div><div style="display:flex;justify-content:space-between;color:var(--mu);font-size:17px;margin:10px 4px 0"><span>Selecione um trecho e clique no estilo.</span><span id="bioN">0 letras</span></div>',
+          ) +
+          H("Meus templates", "Salve várias versões privadas do seu perfil para usar depois.") +
+          CB(
+            CH("bookmark", "Templates pessoais", "Guardam nome, bio, cores, fundo, links, músicas e outras configurações.") +
+              '<div class="url" style="margin:0 0 12px"><input id="profileTemplateName" maxlength="40" placeholder="Nome do template" aria-label="Nome do template" autocomplete="off"></div>' +
+              '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
+              '<button type="button" class="btn" id="saveProfileTemplate">Salvar perfil como template</button>' +
+              '<button type="button" class="btn dark" id="downloadCurrentProfileTemplate">Baixar backup do perfil</button>' +
+              '<label class="btn dark" for="importProfileTemplateFile" style="cursor:pointer">Importar arquivo .template</label>' +
+              '<input type="file" id="importProfileTemplateFile" hidden>' +
+              '</div>' +
+              '<p class="mu" style="font-size:14px;margin:10px 0">O backup inclui bio, visual, links, músicas e mídias enviadas.</p>' +
+              '<p id="profileTemplateStatus" class="mu" style="font-size:16px;margin:12px 0"></p>' +
+              '<div id="profileTemplatesList" style="display:grid;gap:10px"></div>',
           ) +
           CB(
             CH("auto_awesome", "Texto digitando", "Frases que se escrevem sozinhas, em loop, embaixo da bio.") +
@@ -15544,6 +16497,392 @@
           }),
       );
       let bioSel = [0, 0];
+      const PROFILE_TEMPLATE_FORMAT = "gnaybiouser.template";
+      const PROFILE_TEMPLATE_VERSION = 1;
+      const PROFILE_TEMPLATE_MAX_SIZE = 1536 * 1024;
+      const PROFILE_TEMPLATE_OMIT = ["dcId", "dcPremiumType", "views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"];
+      let profileTemplateDownloadFallback = 0;
+      function profileTemplateSnapshot(profile) {
+        const snapshot = JSON.parse(JSON.stringify(profile));
+        PROFILE_TEMPLATE_OMIT.forEach((key) => delete snapshot[key]);
+        return snapshot;
+      }
+      function profileUploadPath(value) {
+        if (typeof value !== "string" || !value) return "";
+        try {
+          const url = new URL(value, location.origin);
+          return url.origin === location.origin && /^\/uploads\/[a-f0-9-]{36}\.[a-z0-9]+$/i.test(url.pathname)
+            ? url.pathname
+            : "";
+        } catch {
+          return "";
+        }
+      }
+      function collectProfileUploads(value, paths = new Set(), depth = 0) {
+        if (depth > 20 || !value || typeof value !== "object") return paths;
+        if (Array.isArray(value)) {
+          value.forEach((item) => collectProfileUploads(item, paths, depth + 1));
+        } else {
+          Object.values(value).forEach((item) => {
+            const path = profileUploadPath(item);
+            if (path) paths.add(path);
+            else collectProfileUploads(item, paths, depth + 1);
+          });
+        }
+        return paths;
+      }
+      function blobAsDataUrl(blob) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error || new Error("Não foi possível ler uma mídia do perfil."));
+          reader.readAsDataURL(blob);
+        });
+      }
+      function templateSaveError(error) {
+        const serverMessage = error.data && typeof error.data.error === "string" ? error.data.error : "";
+        return error.status === 413
+          ? "O template ou uma mídia excede o limite aceito pelo servidor."
+          : error.status === 403 && /limite/i.test(serverMessage)
+            ? "Você atingiu o limite de 50 templates pessoais."
+            : error.status === 401
+              ? "Sua sessão expirou. Entre novamente."
+              : error.status === 409
+                ? "A conta ativa mudou em outra aba. Recarregue a página e tente novamente."
+                : error.status === 501
+                  ? "O backend publicado ainda não oferece templates pessoais. Publique a versão atualizada do servidor no Render."
+                : error.status === 403
+                  ? "O servidor recusou a solicitação. Recarregue a página e tente novamente."
+                  : error.status === 400
+                    ? serverMessage || "Os dados do template foram recusados pelo servidor."
+                    : error.status >= 500
+                      ? "O servidor encontrou um erro ao salvar. Tente novamente mais tarde."
+                      : error instanceof TypeError
+                        ? "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+                        : serverMessage || error.message || "Não foi possível salvar. Tente novamente.";
+      }
+      async function flushProfileTemplateSync() {
+        const waitForSync = async () => {
+          for (let attempt = 0; attempt < 50 && syncBusy; attempt++)
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        };
+        clearTimeout(syncT);
+        syncT = 0;
+        await waitForSync();
+        clearTimeout(syncT);
+        syncT = 0;
+        if (syncDirty && !syncLock) await doSync();
+        await waitForSync();
+        if (syncLock) throw new Error("A conta ativa mudou em outra aba.");
+        if (syncDirty || syncBusy) throw syncError || new Error("Perfil ainda não foi sincronizado.");
+      }
+      function nextProfileTemplateFilename() {
+        const key = "gnay_template_downloads_" + S;
+        let count = 0;
+        try {
+          count = Math.max(0, Number(localStorage.getItem(key)) || 0);
+          localStorage.setItem(key, String(count + 1));
+        } catch {
+          count = Math.max(count, profileTemplateDownloadFallback);
+          profileTemplateDownloadFallback = count + 1;
+        }
+        return "gnaybiouser.template" + (count ? count : "");
+      }
+      async function downloadProfileTemplateFile(name, profile) {
+        const snapshot = profileTemplateSnapshot(profile);
+        if (new TextEncoder().encode(JSON.stringify(snapshot)).length > PROFILE_TEMPLATE_MAX_SIZE) {
+          throw new Error("As configurações desse template excedem o limite de 1,5 MB.");
+        }
+        const paths = [...collectProfileUploads(snapshot)];
+        const assets = [];
+        for (let index = 0; index < paths.length; index++) {
+          const path = paths[index];
+          $("#profileTemplateStatus").textContent =
+            "Preparando mídia " + (index + 1) + " de " + paths.length + " para o backup…";
+          const response = await fetch(path, { credentials: "same-origin" });
+          if (!response.ok) throw new Error("Não foi possível incluir uma mídia no backup (HTTP " + response.status + ").");
+          const blob = await response.blob();
+          assets.push({ url: path, data: await blobAsDataUrl(blob) });
+        }
+        const backup = {
+          format: PROFILE_TEMPLATE_FORMAT,
+          version: PROFILE_TEMPLATE_VERSION,
+          name: String(name || "Meu perfil").trim().slice(0, 40) || "Meu perfil",
+          created: new Date().toISOString(),
+          profile: snapshot,
+          assets,
+        };
+        const file = new Blob([JSON.stringify(backup)], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = nextProfileTemplateFilename();
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      async function downloadSavedProfileTemplate(template) {
+        const status = $("#profileTemplateStatus");
+        try {
+          const result = await api("GET", "/api/profile-templates/" + template.id);
+          await downloadProfileTemplateFile(result.template.name, result.template.profile);
+          status.textContent = "Backup baixado. Guarde o arquivo .template para restaurar depois.";
+        } catch (error) {
+          status.textContent = templateSaveError(error);
+          console.error("Falha ao criar backup do template pessoal:", error);
+        }
+      }
+      async function downloadCurrentProfileTemplate() {
+        const button = $("#downloadCurrentProfileTemplate"),
+          status = $("#profileTemplateStatus");
+        if (!S) {
+          status.textContent = "Entre com o Discord para baixar um backup do perfil.";
+          return;
+        }
+        button.disabled = true;
+        status.textContent = "Sincronizando o perfil antes do backup…";
+        try {
+          await flushProfileTemplateSync();
+          const result = await api("GET", "/api/me");
+          await downloadProfileTemplateFile($("#profileTemplateName").value.trim() || "Meu perfil", result.profile);
+          status.textContent = "Backup do perfil baixado. Guarde o arquivo .template.";
+        } catch (error) {
+          status.textContent = templateSaveError(error);
+          console.error("Falha ao baixar backup do perfil:", error);
+        } finally {
+          button.disabled = false;
+        }
+      }
+      function replaceProfileUploadPaths(value, uploads, depth = 0) {
+        if (depth > 20 || !value || typeof value !== "object") return;
+        if (Array.isArray(value)) {
+          value.forEach((item) => replaceProfileUploadPaths(item, uploads, depth + 1));
+          return;
+        }
+        for (const [key, item] of Object.entries(value)) {
+          const path = profileUploadPath(item);
+          if (path) {
+            if (!uploads.has(path)) throw new Error("O backup não contém uma das mídias do perfil.");
+            value[key] = uploads.get(path);
+          } else {
+            replaceProfileUploadPaths(item, uploads, depth + 1);
+          }
+        }
+      }
+      async function importProfileTemplateFile(file) {
+        const input = $("#importProfileTemplateFile"),
+          saveButton = $("#saveProfileTemplate"),
+          downloadButton = $("#downloadCurrentProfileTemplate"),
+          status = $("#profileTemplateStatus");
+        if (!S) {
+          status.textContent = "Entre com o Discord para importar e salvar um template.";
+          input.value = "";
+          return;
+        }
+        saveButton.disabled = true;
+        downloadButton.disabled = true;
+        input.disabled = true;
+        status.textContent = "Lendo o arquivo de backup…";
+        try {
+          const backup = JSON.parse(await file.text());
+          if (
+            !backup ||
+            backup.format !== PROFILE_TEMPLATE_FORMAT ||
+            backup.version !== PROFILE_TEMPLATE_VERSION ||
+            !backup.profile ||
+            typeof backup.profile !== "object" ||
+            Array.isArray(backup.profile) ||
+            !Array.isArray(backup.assets)
+          ) {
+            throw new Error("Esse arquivo não é um backup .template válido.");
+          }
+          const profile = profileTemplateSnapshot(backup.profile);
+          if (new TextEncoder().encode(JSON.stringify(profile)).length > PROFILE_TEMPLATE_MAX_SIZE) {
+            throw new Error("As configurações desse template excedem o limite de 1,5 MB.");
+          }
+          const existing = await api("GET", "/api/profile-templates");
+          if (existing.templates.length >= existing.max) {
+            const error = new Error("Você atingiu o limite de 50 templates pessoais.");
+            error.status = 403;
+            error.data = { error: error.message };
+            throw error;
+          }
+          const assetData = new Map();
+          for (const asset of backup.assets) {
+            if (
+              !asset ||
+              typeof asset.url !== "string" ||
+              !/^\/uploads\/[a-f0-9-]{36}\.[a-z0-9]+$/i.test(asset.url) ||
+              typeof asset.data !== "string" ||
+              !/^data:(image|audio|video)\/[a-z0-9.+-]+;base64,/i.test(asset.data) ||
+              assetData.has(asset.url)
+            ) {
+              throw new Error("O backup contém uma mídia inválida.");
+            }
+            assetData.set(asset.url, asset.data);
+          }
+          const paths = [...collectProfileUploads(profile)];
+          if (paths.some((path) => !assetData.has(path))) {
+            throw new Error("O backup está incompleto: faltam arquivos de mídia.");
+          }
+          const restored = new Map();
+          for (let index = 0; index < paths.length; index++) {
+            const path = paths[index];
+            status.textContent = "Restaurando mídia " + (index + 1) + " de " + paths.length + "…";
+            const blob = await (await fetch(assetData.get(path))).blob();
+            if (!blob.size || blob.size > UP_MAX) {
+              throw new Error("Uma mídia está vazia ou excede o limite de 1 GB.");
+            }
+            restored.set(path, await upl(blob, blob.type));
+          }
+          replaceProfileUploadPaths(profile, restored);
+          const name =
+            $("#profileTemplateName").value.trim() ||
+            (typeof backup.name === "string" ? backup.name.trim().slice(0, 40) : "") ||
+            file.name.replace(/\.template\d*$/i, "").slice(0, 40) ||
+            "Template importado";
+          status.textContent = "Salvando o template importado…";
+          await api("POST", "/api/profile-templates", { name, profile });
+          $("#profileTemplateName").value = "";
+          status.textContent = "Template importado e salvo. Ele já está na lista para baixar ou usar.";
+          await loadProfileTemplates();
+        } catch (error) {
+          status.textContent = templateSaveError(error);
+          console.error("Falha ao importar template pessoal:", error);
+        } finally {
+          saveButton.disabled = false;
+          downloadButton.disabled = false;
+          input.disabled = false;
+          input.value = "";
+        }
+      }
+      async function loadProfileTemplates() {
+        const list = $("#profileTemplatesList"),
+          status = $("#profileTemplateStatus");
+        if (!list || !status) return;
+        if (!S) {
+          list.replaceChildren();
+          status.textContent = "Entre com o Discord para salvar seus templates.";
+          return;
+        }
+        status.textContent = "Carregando seus templates…";
+        try {
+          const result = await api("GET", "/api/profile-templates");
+          list.replaceChildren();
+          status.textContent = result.templates.length
+            ? result.templates.length + " de " + result.max + " templates salvos."
+            : "Nenhum template salvo ainda.";
+          result.templates.forEach((template) => {
+            const row = document.createElement("div");
+            row.style.cssText =
+              "display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:16px";
+            const name = document.createElement("span");
+            name.textContent = template.name;
+            name.style.cssText = "flex:1;min-width:120px;font-size:18px";
+            const use = document.createElement("button");
+            use.type = "button";
+            use.className = "btn dark";
+            use.textContent = "Usar";
+            use.onclick = () => useProfileTemplate(template);
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "btn dark";
+            remove.textContent = "Excluir";
+            remove.onclick = () => deleteProfileTemplate(template);
+            const download = document.createElement("button");
+            download.type = "button";
+            download.className = "btn dark";
+            download.textContent = "Baixar";
+            download.onclick = () => downloadSavedProfileTemplate(template);
+            row.append(name, use, download, remove);
+            list.appendChild(row);
+          });
+        } catch (error) {
+          status.textContent = error.status === 401
+            ? "Entre novamente pelo Discord para carregar seus templates."
+            : error.status === 501
+              ? "O backend publicado ainda não oferece templates pessoais. Publique a versão atualizada do servidor no Render."
+            : "Não foi possível carregar os templates. Tente novamente.";
+          console.error("Falha ao carregar templates pessoais:", error);
+        }
+      }
+      async function saveProfileTemplate() {
+        const name = $("#profileTemplateName").value.trim(),
+          button = $("#saveProfileTemplate"),
+          status = $("#profileTemplateStatus");
+        if (!S) {
+          toast("Entre com o Discord para salvar templates.");
+          return;
+        }
+        if (!name) {
+          toast("Digite um nome para o template.");
+          $("#profileTemplateName").focus();
+          return;
+        }
+        button.disabled = true;
+        status.textContent = "Sincronizando e salvando…";
+        try {
+          await flushProfileTemplateSync();
+          const current = await api("GET", "/api/me");
+          await api("POST", "/api/profile-templates", { name, profile: current.profile });
+          $("#profileTemplateName").value = "";
+          toast("Template pessoal salvo.");
+          await loadProfileTemplates();
+        } catch (error) {
+          status.textContent = templateSaveError(error);
+          console.error("Falha ao salvar template pessoal:", error);
+        } finally {
+          button.disabled = false;
+        }
+      }
+      $("#downloadCurrentProfileTemplate").onclick = downloadCurrentProfileTemplate;
+      $("#importProfileTemplateFile").onchange = (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (file) importProfileTemplateFile(file);
+      };
+      function useProfileTemplate(template) {
+        dialog({
+          t: "Usar template pessoal",
+          s: 'Aplicar "' + template.name + '" vai substituir as configurações atuais do perfil.',
+          ok: "Aplicar",
+          fn: async () => {
+            try {
+              const { template: saved } = await api("GET", "/api/profile-templates/" + template.id);
+              const preserved = {};
+              ["dcId", "dcPremiumType", "views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"].forEach((key) => {
+                if (Object.hasOwn(P, key)) preserved[key] = P[key];
+              });
+              P = Object.assign({}, saved.profile, preserved);
+              saveP();
+              apply();
+              syncK();
+              refresh();
+              toast("Template aplicado.");
+            } catch (error) {
+              return error.status === 404
+                ? "Esse template não existe mais."
+                : "Não foi possível aplicar o template. Tente novamente.";
+            }
+          },
+        });
+      }
+      function deleteProfileTemplate(template) {
+        dialog({
+          t: "Excluir template pessoal",
+          s: 'Excluir "' + template.name + '"? Essa ação não pode ser desfeita.',
+          ok: "Excluir",
+          fn: async () => {
+            try {
+              await api("DELETE", "/api/profile-templates/" + template.id);
+              toast("Template excluído.");
+              await loadProfileTemplates();
+            } catch (error) {
+              return "Não foi possível excluir o template. Tente novamente.";
+            }
+          },
+        });
+      }
+      $("#saveProfileTemplate").onclick = saveProfileTemplate;
+      loadProfileTemplates();
       (function () {
         const ta = $("#bioTa"),
           tb = $("#bioT");
@@ -15662,6 +17001,17 @@
             e.preventDefault();
             keep();
             wrapB("[" + b.dataset.w + "]", "[/" + b.dataset.w + "]");
+          };
+        });
+        tb.querySelectorAll(".bioRgbApply").forEach((b) => {
+          b.type = "button";
+          b.onclick = (e) => {
+            e.preventDefault();
+            keep();
+            const first = tb.querySelector(".bioC1"),
+              second = tb.querySelector(".bioC2");
+            if (!first || !second) return;
+            wrapB("[rgb=" + first.value + "," + second.value + "]", "[/rgb]");
           };
         });
         const col = $("#bioC");
@@ -16657,7 +18007,9 @@
         const b = e.target.closest("button");
         if (!b) return;
         const a = b.dataset.act;
-        if (PL[a]) openBuy(a);
+        if (a === "Entrar no Discord" || a === "Doar" || a === "Boost" || a === "Reportar") {
+          window.open(GNAY_DISCORD_INVITE, "_blank", "noopener,noreferrer");
+        } else if (PL[a]) openBuy(a);
         else if (a === "Presentear") toast("Os pagamentos estão em manutenção. Tente novamente mais tarde.");
         else if (a === "Adicionar domínio") openBuy("host");
         else toast("Esta ação precisa do servidor oficial (indisponível na demonstração).");
@@ -16950,7 +18302,7 @@
             ";text-align:" +
             (["left", "center", "right"].includes(e.al) ? e.al : "center") +
             ";line-height:1.2;white-space:pre-wrap;word-break:break-word;overflow:hidden";
-          d.textContent = e.txt || "";
+          rich(d, e.txt || "");
         } else if (e.t === "img") {
           const im = document.createElement("img");
           if (/^data:image\//.test(e.src || "")) im.src = e.src;
@@ -16970,7 +18322,7 @@
             ";font-size:" +
             (+e.fs || 20) +
             "px;display:flex;align-items:center;justify-content:center;font-weight:600;text-align:center;text-decoration:none;overflow:hidden";
-          d.textContent = e.txt || "";
+          rich(d, e.txt || "");
           if (!edit) {
             d.href = safeUrl(e.url);
             d.target = "_blank";
@@ -17068,16 +18420,25 @@
         };
         host.appendChild(cv);
       }
-      function czPublic(pr, opt) {
+      function czPublic(pr, opt, profile) {
         opt = opt || {};
+        profile = profile || {};
         const root = document.createElement("div");
         root.className = "pf";
         root.style.cssText =
           "position:relative;min-height:100vh;display:flex;justify-content:center;background-color:" + hx(pr.bgc);
+        const glc = profile.c_acc || "#ffffff",
+          gl = profile.gl || {};
+        if (gl.bg) root.style.boxShadow = "inset 0 0 100px 16px " + glc;
         const W = Math.min(innerWidth, 520),
           k = W / 360;
         const { cv } = czBox(pr, k, false, opt.count);
         cv.style.width = W + "px";
+        if (gl.p) cv.style.boxShadow = "0 0 32px " + glc;
+        if (gl.bio)
+          cv.querySelectorAll(".cze").forEach((el) => {
+            if (el.textContent.trim()) el.style.textShadow = "0 0 10px " + glc + ",0 0 24px " + glc;
+          });
         if (opt.live) cv.style.marginTop = "64px";
         root.appendChild(cv);
         if (!opt.live && opt.own) {
@@ -17568,7 +18929,7 @@
         const c = czCur();
         if (!c) return;
         $("#lpB").innerHTML = "";
-        $("#lpB").appendChild(czPublic(c, { live: true }));
+        $("#lpB").appendChild(czPublic(c, { live: true }, P));
         $("#livePrev").style.display = "block";
       };
       $("#czAddT").onclick = () => czAddEl("text");
@@ -17631,6 +18992,10 @@
           <div class="url" style="margin: 0">
             <input data-k="dn" placeholder="Seu nome" aria-label="Nome de exibição" autocomplete="off" />
           </div>
+          <span class="lb">Animação do nome</span>
+          <div class="sg seg2" data-k="nameFx" data-d="normal" style="margin:0 0 6px">
+            <button data-v="normal">Normal</button><button data-v="wave">Ondas</button><button data-v="hacker">Hacker</button>
+          </div>
           <span class="lb">Bio</span>
           <div class="bwrap">
             <div class="tbr" id="bioT">
@@ -17639,9 +19004,12 @@
               ><button type="button" data-w="u" title="Sublinhado">U</button
               ><button type="button" data-w="s" title="Riscado">S</button
               ><button type="button" data-w="glow" title="Brilho">Brilho</button
-              ><button type="button" data-w="rainbow" class="rnb" title="Arco-íris">Arco-íris</button
+              ><button type="button" data-w="rainbow" class="rnb" title="Arco-íris RGB animado">Arco-íris</button
               ><button type="button" data-w="shake" title="Tremer">Tremer</button
-              ><input type="color" id="bioC" value="#ff4d4d" aria-label="Cor do texto" title="Cor" /><button
+              ><input type="color" id="bioC" value="#ff4d4d" aria-label="Cor do texto" title="Cor" />
+              <input type="color" class="bioC1" value="#00eaff" aria-label="Primeira cor do RGB" title="Primeira cor do RGB" />
+              <input type="color" class="bioC2" value="#ff38d1" aria-label="Segunda cor do RGB" title="Segunda cor do RGB" />
+              <button type="button" class="bioRgbApply" title="Aplicar gradiente animado com as duas cores">2 cores</button><button
                 type="button"
                 id="bioL"
               >
@@ -18305,12 +19673,12 @@
             "Gestione musica e audio",
           ],
           [
-            "Adicione um arquivo seu ou um link do Spotify/YouTube. Para ativar uma música, selecione-a clicando.",
-            "Add your own file or a Spotify/YouTube link. Select a song to activate it.",
-            "Añade tu propio archivo o un enlace de Spotify/YouTube. Selecciona una canción para activarla.",
-            "Ajoutez votre fichier ou un lien Spotify/YouTube. Sélectionnez une musique pour l'activer.",
-            "Füge eine eigene Datei oder einen Spotify-/YouTube-Link hinzu. Wähle einen Titel aus, um ihn zu aktivieren.",
-            "Aggiungi un file o un link Spotify/YouTube. Seleziona un brano per attivarlo.",
+            "Adicione seus arquivos de áudio. Para ativar uma música, selecione-a clicando.",
+            "Add your audio files. Select a song to activate it.",
+            "Añade tus archivos de audio. Selecciona una canción para activarla.",
+            "Ajoutez vos fichiers audio. Sélectionnez une musique pour l'activer.",
+            "Füge deine Audiodateien hinzu. Wähle einen Titel aus, um ihn zu aktivieren.",
+            "Aggiungi i tuoi file audio. Seleziona un brano per attivarlo.",
           ],
           [
             "Adicionar música/áudio",
@@ -18329,28 +19697,12 @@
             "Aggiungi una canzone",
           ],
           [
-            "Link do Spotify ou YouTube",
-            "Spotify or YouTube link",
-            "Enlace de Spotify o YouTube",
-            "Lien Spotify ou YouTube",
-            "Spotify- oder YouTube-Link",
-            "Link Spotify o YouTube",
-          ],
-          [
-            "Cole o link da música ou vídeo",
-            "Paste the song or video link",
-            "Pega el enlace de la canción o el video",
-            "Collez le lien de la musique ou de la vidéo",
-            "Füge den Link zum Song oder Video ein",
-            "Incolla il link della canzone o del video",
-          ],
-          [
-            "Envie um arquivo ou cole um link; ele toca no player oficial.",
-            "Upload a file or paste a link; it plays in the official player.",
-            "Sube un archivo o pega un enlace; se reproduce en el reproductor oficial.",
-            "Envoyez un fichier ou collez un lien ; il sera lu dans le lecteur officiel.",
-            "Lade eine Datei hoch oder füge einen Link ein; die Wiedergabe erfolgt im offiziellen Player.",
-            "Carica un file o incolla un link; verrà riprodotto nel player ufficiale.",
+            "Envie um arquivo de áudio para tocar no perfil.",
+            "Upload an audio file to play on your profile.",
+            "Sube un archivo de audio para reproducirlo en tu perfil.",
+            "Envoyez un fichier audio pour le lire sur votre profil.",
+            "Lade eine Audiodatei hoch, um sie in deinem Profil abzuspielen.",
+            "Carica un file audio da riprodurre sul tuo profilo.",
           ],
           [
             "Clique para enviar um arquivo de áudio",
@@ -18450,28 +19802,12 @@
             "Video YouTube",
           ],
           [
-            "Cole um link válido de faixa do Spotify ou vídeo do YouTube.",
-            "Paste a valid Spotify track or YouTube video link.",
-            "Pega un enlace válido de una canción de Spotify o un video de YouTube.",
-            "Collez un lien valide vers un titre Spotify ou une vidéo YouTube.",
-            "Füge einen gültigen Link zu einem Spotify-Titel oder YouTube-Video ein.",
-            "Incolla un link valido a un brano Spotify o a un video YouTube.",
-          ],
-          [
-            "Escolha um arquivo ou um link, não os dois.",
-            "Choose a file or a link, not both.",
-            "Elige un archivo o un enlace, no ambos.",
-            "Choisissez un fichier ou un lien, pas les deux.",
-            "Wähle eine Datei oder einen Link, nicht beides.",
-            "Scegli un file o un link, non entrambi.",
-          ],
-          [
-            "Envie um arquivo ou cole um link válido do Spotify/YouTube.",
-            "Upload a file or paste a valid Spotify/YouTube link.",
-            "Sube un archivo o pega un enlace válido de Spotify/YouTube.",
-            "Envoyez un fichier ou collez un lien Spotify/YouTube valide.",
-            "Lade eine Datei hoch oder füge einen gültigen Spotify-/YouTube-Link ein.",
-            "Carica un file o incolla un link Spotify/YouTube valido.",
+            "Envie um arquivo de áudio.",
+            "Upload an audio file.",
+            "Sube un archivo de audio.",
+            "Envoyez un fichier audio.",
+            "Lade eine Audiodatei hoch.",
+            "Carica un file audio.",
           ],
           [
             "Mostrar seu Discord",

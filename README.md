@@ -4,7 +4,7 @@ Este projeto usa um servidor local para login pelo Discord e para salvar perfis 
 
 ## Configurar o login Discord
 
-1. No Discord Developer Portal, crie uma aplicação e abra **OAuth2**.
+1. No Discord Developer Portal, crie uma aplicação e abra **OAuth2**. O login solicita `identify` e `identify.premium`; a segunda permissão permite mostrar a insígnia Nitro conforme o status retornado pelo Discord.
 2. Adicione este Redirect URI, exatamente como está:
    `http://localhost:8765/auth/discord/callback`
 3. Copie `.env.example` para `.env` e preencha Client ID e Client Secret. O arquivo fica local e é ignorado pelo Git:
@@ -55,4 +55,10 @@ Integrações como pagamentos, MFA e recursos administrativos continuam dependen
 
 ## Cartão e atividades do Discord
 
-O perfil usa o ID da conta autenticada para exibir o cartão do Discord. Para exibir presença e atividades ao vivo, a conta também precisa entrar no [servidor Lanyard](https://discord.gg/lanyard) e permitir que ele compartilhe a presença. O servidor local consulta a API pública do Lanyard; se a conta não estiver sendo monitorada, o perfil informa como ativar o recurso. A decoração do avatar é lida dos dados de identificação do Discord no próximo login.
+O perfil usa o ID da conta autenticada para exibir o cartão do Discord. Para exibir presença e atividades ao vivo, a conta também precisa entrar no [servidor Lanyard](https://discord.gg/lanyard) e permitir que ele compartilhe a presença. O servidor local consulta a API pública do Lanyard; se a conta não estiver sendo monitorada, o perfil informa como ativar o recurso. A decoração do avatar e o tipo de assinatura Nitro são atualizados ao entrar pelo Discord. O status Nitro é carregado no próximo login, quando a conta autoriza o escopo `identify.premium`. O Discord não fornece um status global de Boost: essa insígnia depende de um servidor específico e não é exibida automaticamente neste site.
+
+## Templates pessoais do perfil
+
+Na categoria **Perfil**, cada conta autenticada pode salvar até 50 templates pessoais e privados. Eles guardam uma cópia das configurações visuais e do conteúdo do perfil, incluindo bio, fundo, links e músicas, e podem ser aplicados ou excluídos depois. O recurso depende das rotas `/api/profile-templates` do backend: publique a versão atualizada de `server.js` no Render e o frontend no Netlify. Se o servidor responder `501`, o backend publicado ainda não tem essas rotas. Os dados ficam em `profileTemplates` no `data/store.json` do backend; faça backup desse arquivo se precisar manter os dados entre reinicializações ou migrações do serviço.
+
+Também é possível baixar o perfil atual ou um template salvo em um arquivo `.template` e importá-lo depois. O arquivo inclui as mídias enviadas ao site; ao importar, elas são enviadas novamente e o perfil restaurado é salvo como um novo template pessoal (não substitui o perfil ativo). Os downloads usam nomes sequenciais como `gnaybiouser.template`, `gnaybiouser.template1` e `gnaybiouser.template2`. Templates pessoais aceitam até 1,5 MB de configurações, além das mídias incluídas no arquivo.

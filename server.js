@@ -13,7 +13,9 @@ const UPLOAD_CHUNK_SIZE = 512 * 1024;
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024;
 const MAX_UPLOAD_PARTS = Math.ceil(MAX_UPLOAD_SIZE / UPLOAD_CHUNK_SIZE);
 const MAX_TEMPLATE_PROFILE_SIZE = 512 * 1024;
+const MAX_PROFILE_TEMPLATE_SIZE = 1536 * 1024;
 const TEMPLATE_LIMIT = 10;
+const PROFILE_TEMPLATE_LIMIT = 50;
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 const OAUTH_TTL = 10 * 60 * 1000;
 const COOKIE_NAME = "gnay_session";
@@ -102,6 +104,7 @@ function readStore() {
     return {
       users: store.users || {},
       profiles: store.profiles || {},
+      profileTemplates: store.profileTemplates || {},
       sessions: store.sessions || {},
       templates: store.templates || {},
       templateFavorites: store.templateFavorites || {},
@@ -114,6 +117,7 @@ function readStore() {
       return {
         users: {},
         profiles: {},
+        profileTemplates: {},
         sessions: {},
         templates: {},
         templateFavorites: {},
@@ -321,7 +325,9 @@ function templateAccessible(template, user) {
 
 function templateProfileSnapshot(profile) {
   const snapshot = cleanProfile(profile);
-  ["dcId", "views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"].forEach((key) => delete snapshot[key]);
+  ["dcId", "dcPremiumType", "views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"].forEach((key) =>
+    delete snapshot[key],
+  );
   return snapshot;
 }
 
@@ -441,7 +447,7 @@ async function handleOAuth(req, res, url) {
   authorization.searchParams.set("client_id", clientId);
   authorization.searchParams.set("redirect_uri", redirectUri);
   authorization.searchParams.set("response_type", "code");
-  authorization.searchParams.set("scope", "identify");
+  authorization.searchParams.set("scope", "identify identify.premium");
   authorization.searchParams.set("state", state);
   redirect(
     res,
@@ -527,6 +533,10 @@ async function handleOAuthCallback(req, res, url) {
         : "";
       user.decorationAsset = decorationAsset;
     }
+    user.premiumType =
+      Number.isInteger(identity.premium_type) && identity.premium_type >= 0 && identity.premium_type <= 3
+        ? identity.premium_type
+        : 0;
     const sid = crypto.randomBytes(32).toString("base64url");
     store.sessions[tokenHash(sid)] = { slug: user.slug, expires: Date.now() + SESSION_TTL };
     saveStore();
@@ -733,6 +743,7 @@ async function handleApi(req, res, url) {
     }
     const profile = Object.assign({}, store.profiles[session.user.slug] || {}, {
       dcId: session.user.discordId,
+      dcPremiumType: session.user.premiumType || 0,
     });
     sendJson(res, 200, {
       user: publicUser(session.user),
@@ -750,6 +761,7 @@ async function handleApi(req, res, url) {
     }
     const profile = Object.assign({}, store.profiles[slug] || {}, {
       dcId: user.discordId,
+      dcPremiumType: user.premiumType || 0,
     });
     sendJson(res, 200, {
       slug,
@@ -825,6 +837,69 @@ async function handleApi(req, res, url) {
 
   const session = requireUser(req, res);
   if (!session) return;
+
+  const personalTemplateMatch = pathname.match(/^\/api\/profile-templates(?:\/([a-f0-9-]{36}))?$/i);
+  if (personalTemplateMatch && req.method === "GET") {
+    const templates = store.profileTemplates[session.user.discordId] || [];
+    if (personalTemplateMatch[1]) {
+      const template = templates.find((item) => item.id === personalTemplateMatch[1]);
+      if (!template) {
+        sendJson(res, 404, { error: "Template não encontrado." });
+        return;
+      }
+      sendJson(res, 200, { template });
+      return;
+    }
+    sendJson(
+      res,
+      200,
+      { templates: templates.map(({ id, name, created }) => ({ id, name, created })), max: PROFILE_TEMPLATE_LIMIT },
+    );
+    return;
+  }
+
+  if (personalTemplateMatch && req.method === "POST" && !personalTemplateMatch[1]) {
+    if (!checkOrigin(req, res)) return;
+    const body = await readJson(req, 2 * 1024 * 1024);
+    const name = typeof body.name === "string" ? body.name.trim().slice(0, 40) : "";
+    if (!name) {
+      sendJson(res, 400, { error: "Dê um nome para o template." });
+      return;
+    }
+    if (!body.profile || typeof body.profile !== "object" || Array.isArray(body.profile)) {
+      sendJson(res, 400, { error: "Perfil do template inválido." });
+      return;
+    }
+    const templates = (store.profileTemplates[session.user.discordId] ||= []);
+    if (templates.length >= PROFILE_TEMPLATE_LIMIT) {
+      sendJson(res, 403, { error: "Você atingiu o limite de templates pessoais." });
+      return;
+    }
+    const profile = templateProfileSnapshot(body.profile);
+    if (Buffer.byteLength(JSON.stringify(profile), "utf8") > MAX_PROFILE_TEMPLATE_SIZE) {
+      sendJson(res, 413, { error: "O perfil está grande demais para virar template." });
+      return;
+    }
+    const template = { id: crypto.randomUUID(), name, created: Date.now(), profile };
+    templates.unshift(template);
+    saveStore();
+    sendJson(res, 201, { template: { id: template.id, name: template.name, created: template.created } });
+    return;
+  }
+
+  if (personalTemplateMatch && req.method === "DELETE" && personalTemplateMatch[1]) {
+    if (!checkOrigin(req, res)) return;
+    const templates = store.profileTemplates[session.user.discordId] || [];
+    const index = templates.findIndex((item) => item.id === personalTemplateMatch[1]);
+    if (index < 0) {
+      sendJson(res, 404, { error: "Template não encontrado." });
+      return;
+    }
+    templates.splice(index, 1);
+    saveStore();
+    sendJson(res, 200, { ok: true });
+    return;
+  }
 
   if (req.method === "POST" && pathname === "/api/templates") {
     if (!checkOrigin(req, res)) return;
@@ -1032,6 +1107,7 @@ async function handleApi(req, res, url) {
     }
     const profile = cleanProfile(body.profile);
     profile.dcId = session.user.discordId;
+    delete profile.dcPremiumType;
     const existing = store.profiles[session.user.slug] || {};
     for (const key of ["views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"]) {
       if (existing[key] !== undefined) profile[key] = existing[key];
