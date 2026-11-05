@@ -2104,6 +2104,7 @@
         width: 100%;
         height: 100vh;
         height: 100lvh;
+        background-color: #0b0b0b;
         image-rendering: auto;
         object-fit: cover;
         object-position: center;
@@ -2111,9 +2112,6 @@
         pointer-events: none;
         user-select: none;
         -webkit-user-drag: none;
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        backface-visibility: hidden;
       }
       .pfbgo {
         z-index: 0;
@@ -12757,6 +12755,7 @@
           const isVideoBg = /\.(mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i.test(String(Q.bg));
           const bi = document.createElement(isVideoBg ? "video" : "img");
           bi.className = "pfbg";
+          bi.style.backgroundColor = bg;
           if (isVideoBg) {
             bi.muted = true;
             bi.autoplay = true;
@@ -12764,6 +12763,10 @@
             bi.playsInline = true;
             bi.setAttribute("aria-hidden", "true");
             bi.preload = "metadata";
+            bi.onerror = () => {
+              console.error("Não foi possível reproduzir o vídeo de fundo do perfil.");
+              bi.remove();
+            };
           } else {
             bi.alt = "";
             bi.decoding = "async";
@@ -12771,6 +12774,12 @@
           }
           bi.src = Q.bg;
           root.appendChild(bi);
+          if (isVideoBg) {
+            bi.play().catch((error) => {
+              console.warn("Não foi possível iniciar o vídeo de fundo do perfil:", error);
+              if (error && error.name === "NotAllowedError") bi.remove();
+            });
+          }
           if (Q.grad) {
             const go = document.createElement("div");
             go.className = "pfbg pfbgo";
@@ -13091,9 +13100,7 @@
           setTimeout(fit, 0);
         }
         let go = () => {},
-          enterSplash = null,
-          spotifyReady = false,
-          spotifyError = false;
+          enterSplash = null;
         let A = Q.audios || [];
         if (!A.length && Q.audio) A = [{ id: "a0", t: Q.audioN || "Áudio", src: Q.audio, d: 0 }];
         if (A.length && !opt.prev) {
@@ -13211,8 +13218,6 @@
             embedTarget = null;
             embedProvider = "";
             embedWrap = null;
-            spotifyReady = false;
-            spotifyError = false;
             if (pl) {
               pl.classList.remove("pfp-provider");
               delete pl.dataset.provider;
@@ -13231,7 +13236,7 @@
             const src = new URL(parsed.embed);
             src.searchParams.set("autoplay", autoplay ? "1" : "0");
             src.searchParams.set("enablejsapi", "1");
-            src.searchParams.set("controls", "0");
+            src.searchParams.set("controls", "1");
             src.searchParams.set("playsinline", "1");
             if (/^https?:$/.test(location.protocol)) src.searchParams.set("origin", location.origin);
             embedFrame = document.createElement("iframe");
@@ -13240,7 +13245,7 @@
             frame.title = "Player de YouTube: " + A[ix].t;
             frame.referrerPolicy = "strict-origin-when-cross-origin";
             frame.allow = "autoplay; encrypted-media; picture-in-picture";
-            frame.style.cssText = "display:block;width:1px;height:1px;border:0";
+            frame.style.cssText = "display:block;width:100%;height:100%;border:0";
             const playVideo = () => {
               if (!wantPlay || !frame.isConnected || !frame.contentWindow) return;
               setVol(vol);
@@ -13251,7 +13256,9 @@
             };
             frame.addEventListener("load", playVideo);
             embedWrap.appendChild(frame);
-            if (autoplay) playVideo();
+            if (autoplay) {
+              [0, 250, 750, 1500].forEach((delay) => setTimeout(playVideo, delay));
+            }
           };
           const showEmbed = (itm) => {
             clearEmbed();
@@ -13263,7 +13270,11 @@
             }
             embedWrap = document.createElement("div");
             embedWrap.style.cssText =
-              "position:fixed;left:-10000px;top:0;width:300px;height:152px;overflow:hidden";
+              "display:none;position:fixed;left:12px;bottom:calc(var(--safe-b) + 12px);z-index:10;width:min(" +
+              (itm.provider === "youtube" ? "360px" : "300px") +
+              ",calc(100vw - 24px));height:" +
+              (itm.provider === "youtube" ? "203px" : "152px") +
+              ";overflow:hidden;border-radius:12px;background:#000;box-shadow:0 4px 24px rgba(0,0,0,.45)";
             embedProvider = itm.provider;
             if (itm.provider === "youtube") {
               youtubeFrame(parsed, wantPlay);
@@ -13287,7 +13298,6 @@
                         return;
                       }
                       spotifyController = controller;
-                      spotifyReady = true;
                       if (enterSplash && enterSplash.isConnected) {
                         enterSplash.querySelector(".pfs-title").textContent = Q.et || "clique para entrar";
                         enterSplash.style.cursor = "pointer";
@@ -13309,10 +13319,17 @@
                   embedFrame.style.cssText = "display:block;width:300px;height:152px;border:0";
                   target.replaceWith(embedFrame);
                   embedTarget = null;
-                  spotifyError = true;
-                  spotifyReady = true;
+                  embedWrap.style.height = "190px";
+                  const openSpotify = document.createElement("a");
+                  openSpotify.href = itm.url;
+                  openSpotify.target = "_blank";
+                  openSpotify.rel = "noopener noreferrer";
+                  openSpotify.textContent = "Abrir no Spotify";
+                  openSpotify.style.cssText =
+                    "display:block;box-sizing:border-box;width:100%;padding:10px;text-align:center;background:#1ed760;color:#000;font:600 14px sans-serif;text-decoration:none";
+                  embedWrap.appendChild(openSpotify);
                   if (enterSplash && enterSplash.isConnected) {
-                    enterSplash.querySelector(".pfs-title").textContent = "Clique para abrir no Spotify";
+                    enterSplash.querySelector(".pfs-title").textContent = "Clique para entrar";
                     enterSplash.style.cursor = "pointer";
                   }
                 });
@@ -13323,11 +13340,16 @@
             wantPlay = true;
             if (embedProvider === "spotify") {
               if (spotifyController) {
-                spotifyController.play();
-              }
-              else if (embedFrame) {
-                const current = A[ix];
-                if (current && current.url) window.open(current.url, "_blank", "noopener");
+                try {
+                  const result = spotifyController.play();
+                  if (result && typeof result.catch === "function") {
+                    result.catch((error) =>
+                      console.warn("O Spotify bloqueou a reprodução automática; use os controles do player.", error),
+                    );
+                  }
+                } catch (error) {
+                  console.warn("Não foi possível iniciar o player do Spotify; use os controles do player.", error);
+                }
               }
               sync();
               return;
@@ -13336,17 +13358,13 @@
               sync();
               return;
             }
-            const src = new URL(embedFrame.src);
-            if (src.searchParams.get("autoplay") !== "1") {
-              src.searchParams.set("autoplay", "1");
-              embedFrame.src = src.href;
-            }
-            if (embedFrame.contentWindow) {
+            [0, 250, 750, 1500].forEach((delay) => setTimeout(() => {
+              if (!wantPlay || !embedFrame || !embedFrame.contentWindow) return;
               embedFrame.contentWindow.postMessage(
                 JSON.stringify({ event: "command", func: "playVideo", args: [] }),
                 "https://www.youtube-nocookie.com",
               );
-            }
+            }, delay));
             sync();
           };
           vb = document.createElement("button");
@@ -13358,7 +13376,6 @@
               wantPlay = !wantPlay;
               if (wantPlay) playEmbed();
               else if (embedProvider === "spotify" && spotifyController) spotifyController.pause();
-              else if (embedProvider === "spotify" && embedFrame) embedFrame.src = "about:blank";
               else if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
                 embedFrame.contentWindow.postMessage(
                   JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
@@ -13552,12 +13569,8 @@
           if (A[ix].provider) showEmbed(A[ix]);
           go = () => {
             if (A[ix].provider) {
-            if (A[ix].provider === "spotify" && spotifyError) {
-              window.open(A[ix].url, "_blank", "noopener");
+              playEmbed();
               return;
-            }
-            playEmbed();
-            return;
             }
             wantPlay = true;
             playWhenReady();
@@ -13607,6 +13620,7 @@
           sp.append(h1, h2);
           sp.onclick = () => {
             sp.remove();
+            if (embedWrap) embedWrap.style.display = "block";
             try {
               go();
             } catch (error) {
@@ -13650,18 +13664,16 @@
               if (x && x !== location.hostname) sr = x;
             }
           } catch (e) {}
-          api("POST", "/api/view/" + encodeURIComponent(ow), { dv, src: sr })
-            .then((r) => {
-              if (Number.isSafeInteger(r && r.views) && getH() === h) {
-                if (own && S === ow) {
-                  P.views = r.views;
-                  saveLocal();
+          if (!own) {
+            api("POST", "/api/view/" + encodeURIComponent(ow), { dv, src: sr })
+              .then((r) => {
+                if (Number.isSafeInteger(r && r.views) && getH() === h) {
+                  const e = document.querySelector("#v-prof .pfv");
+                  if (e && e.lastChild && e.lastChild.nodeType === 3) e.lastChild.textContent = String(r.views);
                 }
-                const e = document.querySelector("#v-prof .pfv");
-                if (e && e.lastChild && e.lastChild.nodeType === 3) e.lastChild.textContent = String(r.views);
-              }
-            })
-            .catch((error) => console.error("Falha ao registrar a visualização do perfil:", error));
+              })
+              .catch((error) => console.error("Falha ao registrar a visualização do perfil:", error));
+          }
           const count = (l) => {
             if (own) return;
             api("POST", "/api/click/" + encodeURIComponent(ow), { n: l.n }, { keepalive: true }).catch(() => {});

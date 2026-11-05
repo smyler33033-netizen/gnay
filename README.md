@@ -47,7 +47,9 @@ Criar um template salva uma cópia da bio atual, incluindo visual, textos, cores
 
 A Edge Function `netlify/edge-functions/profile-preview.ts` usa os dados públicos do backend para montar os metadados Open Graph de cada URL `/<nome>`. O Netlify publica essa função junto com o site; mantenha a rota `/:slug` configurada no `netlify.toml`. O serviço do Render também precisa estar acessível para que o Discord receba nome, bio e avatar corretos. Pré-visualizações que já foram enviadas podem continuar em cache pelo Discord.
 
-Os contadores públicos e as estatísticas do painel são calculados a partir das contas, arquivos enviados e eventos reais de visualização e clique armazenados pelo backend. Dados de país são registrados quando o Netlify encaminha o código de país da visita. Como o serviço gratuito do Render usa armazenamento temporário, esses dados podem ser perdidos quando o serviço reinicia.
+As visualizações são contadas uma vez por endereço IP e perfil; recarregar a página não conta novamente, e visitas feitas pelo próprio dono conectado são ignoradas. O backend guarda apenas um HMAC do IP, não o endereço em texto puro. As estatísticas diárias também contam apenas essa primeira visita.
+
+O serviço gratuito do Render usa armazenamento temporário. Bios, templates, arquivos enviados e a lista de IPs já contados podem ser perdidos em uma reinicialização ou novo deploy. Para mantê-los entre deploys, configure armazenamento persistente externo ou um disco persistente do Render; faça backups, pois nenhum armazenamento garante dados “para sempre”.
 
 Integrações como pagamentos, MFA e recursos administrativos continuam dependendo de serviços adicionais.
 
