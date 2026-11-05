@@ -2,6 +2,7 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
+const net = require("node:net");
 
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, "data");
@@ -105,15 +106,29 @@ function readStore() {
       templates: store.templates || {},
       templateFavorites: store.templateFavorites || {},
       templateRecent: store.templateRecent || {},
+      viewedIps: store.viewedIps || {},
+      viewHashSecret: store.viewHashSecret,
     };
   } catch (error) {
     if (error.code === "ENOENT")
-      return { users: {}, profiles: {}, sessions: {}, templates: {}, templateFavorites: {}, templateRecent: {} };
+      return {
+        users: {},
+        profiles: {},
+        sessions: {},
+        templates: {},
+        templateFavorites: {},
+        templateRecent: {},
+        viewedIps: {},
+      };
     throw error;
   }
 }
 
 let store = readStore();
+if (typeof store.viewHashSecret !== "string" || store.viewHashSecret.length < 32) {
+  store.viewHashSecret = crypto.randomBytes(32).toString("hex");
+  saveStore();
+}
 function saveStore() {
   const tempFile = STORE_FILE + ".tmp";
   fs.writeFileSync(tempFile, JSON.stringify(store), { mode: 0o600 });
@@ -160,6 +175,31 @@ function sessionCookie(value, maxAge) {
 
 function tokenHash(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function clientIp(req) {
+  const forwarded = typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0] : "";
+  const candidates = [
+    req.headers["x-nf-client-connection-ip"],
+    req.headers["cf-connecting-ip"],
+    req.headers["x-real-ip"],
+    forwarded,
+    req.socket.remoteAddress,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+    let address = candidate.trim();
+    if (address.startsWith("[") && address.includes("]")) address = address.slice(1, address.indexOf("]"));
+    if (net.isIP(address)) {
+      if (address.startsWith("::ffff:") && net.isIP(address.slice(7)) === 4) address = address.slice(7);
+      return address.toLowerCase();
+    }
+  }
+  return "";
+}
+
+function viewIpHash(slug, address) {
+  return crypto.createHmac("sha256", store.viewHashSecret).update(slug + "\0" + address).digest("hex");
 }
 
 function currentUser(req) {
@@ -574,8 +614,26 @@ async function handleApi(req, res, url) {
     }
     const body = await readJson(req, 16 * 1024);
     const profile = store.profiles[slug] || (store.profiles[slug] = {});
+    const views = Number.isSafeInteger(profile.views) ? profile.views : 0;
+    const session = currentUser(req);
+    if (session && session.user.slug === slug) {
+      sendJson(res, 200, { views, counted: false, reason: "owner" });
+      return;
+    }
+    const address = clientIp(req);
+    if (!address) {
+      sendJson(res, 200, { views, counted: false, reason: "ip_unavailable" });
+      return;
+    }
+    const ipHash = viewIpHash(slug, address);
+    const viewedIps = (store.viewedIps[slug] ||= {});
+    if (viewedIps[ipHash]) {
+      sendJson(res, 200, { views, counted: false, reason: "already_counted" });
+      return;
+    }
     const day = new Date().toISOString().slice(0, 10);
     profile.views = (Number.isSafeInteger(profile.views) ? profile.views : 0) + 1;
+    viewedIps[ipHash] = Date.now();
     profile.vd = profile.vd && typeof profile.vd === "object" && !Array.isArray(profile.vd) ? profile.vd : {};
     profile.vd[day] = (Number.isSafeInteger(profile.vd[day]) ? profile.vd[day] : 0) + 1;
     const device = body.dv === "Celular" ? "Celular" : body.dv === "Computador" ? "Computador" : "Outro";
@@ -591,7 +649,7 @@ async function handleApi(req, res, url) {
     }
     store.profiles[slug] = profile;
     saveStore();
-    sendJson(res, 200, { views: profile.views });
+    sendJson(res, 200, { views: profile.views, counted: true });
     return;
   }
 
@@ -956,6 +1014,10 @@ async function handleApi(req, res, url) {
         template.ownerName = user.dn;
       }
     }
+    if (Object.hasOwn(store.viewedIps, oldSlug)) {
+      store.viewedIps[slug] = store.viewedIps[oldSlug];
+      delete store.viewedIps[oldSlug];
+    }
     saveStore();
     sendJson(res, 200, { user: publicUser(user) });
     return;
@@ -1123,6 +1185,7 @@ async function handleApi(req, res, url) {
     if (!checkOrigin(req, res)) return;
     delete store.users[session.user.slug];
     delete store.profiles[session.user.slug];
+    delete store.viewedIps[session.user.slug];
     delete store.sessions[session.key];
     saveStore();
     sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", 0) });
