@@ -8172,8 +8172,8 @@
           </button>
         </div>
         <p class="mdsh-d" id="mdShD">
-          Preencha os detalhes para criar um novo template na gnay. Ele copia o seu perfil completo de agora
-          (visual, links, bio, avatar e áudios) e você pode ver a prévia depois.
+          Salve sua bio atual como template: cores, fundo, layout, textos, links e músicas. A visibilidade começa como
+          pública, para compartilhar na biblioteca da gnay.
         </p>
         <section class="mdsec">
           <span class="mdlb">Prévia do template</span>
@@ -11884,7 +11884,7 @@
           s:
             "Isso troca plano de fundo, cores, efeitos e layout do seu perfil pelos deste template. Por padrão seus links, bio, avatar e áudios não mudam." +
             (t.audio ? " O áudio do template será adicionado à sua lista, se houver espaço." : ""),
-          html: '<label style="display:flex;gap:12px;align-items:flex-start;margin-top:14px;font-size:19px;line-height:1.35;cursor:pointer"><input type="checkbox" id="mdFull" style="width:24px;height:24px;margin-top:2px;flex:none"><span>Copiar o perfil completo (links, bio, avatar e áudios). Isso substitui os seus.</span></label>',
+          html: '<label style="display:flex;gap:12px;align-items:flex-start;margin-top:14px;font-size:19px;line-height:1.35;cursor:pointer"><input type="checkbox" id="mdFull" checked style="width:24px;height:24px;margin-top:2px;flex:none"><span>Usar também os textos, links, avatar e músicas deste template. Isso substituirá esses dados do seu perfil.</span></label>',
           ok: "Usar template",
           fn: async () => {
             try {
@@ -13601,19 +13601,26 @@
           h1.textContent = Q.et || "clique para entrar";
           h1.className = "pfs-title";
           enterSplash = sp;
-          if (A[ix] && A[ix].provider === "spotify" && !spotifyReady) {
-            h1.textContent = "Carregando música…";
-            sp.style.cursor = "wait";
-          }
           const h2 = document.createElement("div");
           h2.style.cssText = "font-size:19px;font-weight:300;opacity:.7";
           h2.textContent = Q.es || "";
           sp.append(h1, h2);
           sp.onclick = () => {
-            if (A[ix] && A[ix].provider === "spotify" && !spotifyReady) return;
             sp.remove();
-            go();
-            late.forEach((f) => f && f());
+            try {
+              go();
+            } catch (error) {
+              console.error("Falha ao iniciar a mídia do perfil:", error);
+            } finally {
+              late.forEach((start) => {
+                if (!start) return;
+                try {
+                  start();
+                } catch (error) {
+                  console.error("Falha ao carregar um widget do perfil:", error);
+                }
+              });
+            }
           };
           root.appendChild(sp);
         } else if (!opt.live && opt.own) {

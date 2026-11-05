@@ -11,6 +11,8 @@ const STORE_FILE = path.join(DATA_DIR, "store.json");
 const UPLOAD_CHUNK_SIZE = 512 * 1024;
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024;
 const MAX_UPLOAD_PARTS = Math.ceil(MAX_UPLOAD_SIZE / UPLOAD_CHUNK_SIZE);
+const MAX_TEMPLATE_PROFILE_SIZE = 512 * 1024;
+const TEMPLATE_LIMIT = 10;
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 const OAUTH_TTL = 10 * 60 * 1000;
 const COOKIE_NAME = "gnay_session";
@@ -100,9 +102,13 @@ function readStore() {
       users: store.users || {},
       profiles: store.profiles || {},
       sessions: store.sessions || {},
+      templates: store.templates || {},
+      templateFavorites: store.templateFavorites || {},
+      templateRecent: store.templateRecent || {},
     };
   } catch (error) {
-    if (error.code === "ENOENT") return { users: {}, profiles: {}, sessions: {} };
+    if (error.code === "ENOENT")
+      return { users: {}, profiles: {}, sessions: {}, templates: {}, templateFavorites: {}, templateRecent: {} };
     throw error;
   }
 }
@@ -263,6 +269,103 @@ function makeSlug(preferred, discordUser) {
 function publicUser(user) {
   const { discordId, ...safeUser } = user;
   return Object.assign(safeUser, { dcId: discordId });
+}
+
+function templateOwnedBy(template, user) {
+  return !!template && !!user && template.ownerId === user.discordId;
+}
+
+function templateAccessible(template, user) {
+  return !!template && (template.vis !== "private" || templateOwnedBy(template, user));
+}
+
+function templateProfileSnapshot(profile) {
+  const snapshot = cleanProfile(profile);
+  ["dcId", "views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"].forEach((key) => delete snapshot[key]);
+  return snapshot;
+}
+
+function templateStars(id) {
+  return Object.values(store.templateFavorites).reduce(
+    (total, favorites) => total + (Array.isArray(favorites) && favorites.includes(id) ? 1 : 0),
+    0,
+  );
+}
+
+function publicTemplate(template, user, includeProfile = false) {
+  const owned = templateOwnedBy(template, user);
+  const favorites = user ? store.templateFavorites[user.discordId] || [] : [];
+  const result = {
+    id: template.id,
+    name: template.name,
+    tags: template.tags,
+    vis: template.vis,
+    preview: template.preview,
+    audio: template.audio,
+    owner: { slug: template.ownerSlug, dn: template.ownerName },
+    created: template.created,
+    uses: template.uses,
+    stars: templateStars(template.id),
+    fav: favorites.includes(template.id),
+    mine: owned,
+    premium: !!template.premium,
+  };
+  if (includeProfile) result.profile = template.profile;
+  return result;
+}
+
+function cleanTemplateFields(body, current) {
+  const name =
+    body.name === undefined
+      ? current && current.name
+      : typeof body.name === "string"
+        ? body.name.trim().slice(0, 40)
+        : "";
+  if (!name) throw Object.assign(new Error("Nome de template inválido."), { status: 400 });
+  const tags = body.tags === undefined ? (current && current.tags) || [] : body.tags;
+  if (
+    !Array.isArray(tags) ||
+    tags.length > 5 ||
+    tags.some((tag) => typeof tag !== "string" || !tag.trim() || tag.trim().length > 20)
+  ) {
+    throw Object.assign(new Error("Tags inválidas."), { status: 400 });
+  }
+  const vis = body.vis === undefined ? (current && current.vis) || "public" : body.vis;
+  if (!["public", "unlisted", "private"].includes(vis)) {
+    throw Object.assign(new Error("Visibilidade inválida."), { status: 400 });
+  }
+  const preview = body.preview === undefined ? (current && current.preview) || "" : body.preview;
+  const audio = body.audio === undefined ? (current && current.audio) || "" : body.audio;
+  for (const [value, label] of [[preview, "Imagem de prévia"], [audio, "Áudio"]]) {
+    let validUrl = value === "";
+    if (typeof value === "string" && value.length <= 2048 && /^\/uploads\/[a-f0-9-]{36}\.[a-z0-9]+$/i.test(value)) {
+      validUrl = true;
+    } else if (typeof value === "string" && value.length <= 2048 && /^https:\/\//i.test(value)) {
+      try {
+        const parsed = new URL(value);
+        validUrl = !parsed.username && !parsed.password;
+      } catch {}
+    }
+    if (!validUrl) {
+      throw Object.assign(new Error(label + " inválido."), { status: 400 });
+    }
+  }
+  const profile = body.profile === undefined ? current && current.profile : body.profile;
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+    throw Object.assign(new Error("Perfil do template inválido."), { status: 400 });
+  }
+  const cleanProfileValue = templateProfileSnapshot(profile);
+  if (Buffer.byteLength(JSON.stringify(cleanProfileValue), "utf8") > MAX_TEMPLATE_PROFILE_SIZE) {
+    throw Object.assign(new Error("too_large"), { status: 413 });
+  }
+  return {
+    name,
+    tags: [...new Set(tags.map((tag) => tag.trim()))],
+    vis,
+    preview,
+    audio,
+    profile: cleanProfileValue,
+  };
 }
 
 function uploadExtension(mime) {
@@ -598,8 +701,222 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && pathname === "/api/templates") {
+    const session = currentUser(req);
+    if (!session) {
+      sendJson(res, 401, { error: "Entre com o Discord para continuar." });
+      return;
+    }
+    const user = session.user;
+    const tab = url.searchParams.get("tab") || "library";
+    if (!["library", "favs", "recent", "mine"].includes(tab)) {
+      sendJson(res, 400, { error: "Filtro de templates inválido." });
+      return;
+    }
+    const query = (url.searchParams.get("q") || "").trim().slice(0, 60).toLocaleLowerCase();
+    const ownerFilter = (url.searchParams.get("user") || "").trim().slice(0, 20).toLocaleLowerCase();
+    const sort = url.searchParams.get("sort") || "hot";
+    const favorites = store.templateFavorites[user.discordId] || [];
+    const recent = store.templateRecent[user.discordId] || [];
+    let templates = Object.values(store.templates).filter((template) => {
+      if (tab === "mine") return templateOwnedBy(template, user);
+      if (!templateAccessible(template, user)) return false;
+      if (tab === "favs" && !favorites.includes(template.id)) return false;
+      if (tab === "recent" && !recent.includes(template.id)) return false;
+      if (tab === "library" && template.vis !== "public") return false;
+      if (ownerFilter && template.ownerSlug.toLocaleLowerCase() !== ownerFilter) return false;
+      if (
+        query &&
+        !template.name.toLocaleLowerCase().includes(query) &&
+        !template.tags.some((tag) => tag.toLocaleLowerCase().includes(query))
+      ) {
+        return false;
+      }
+      if (sort === "free" && template.premium) return false;
+      if (sort === "premium" && !template.premium) return false;
+      return true;
+    });
+    if (tab === "recent") {
+      templates.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));
+    } else if (sort === "old") {
+      templates.sort((a, b) => a.created - b.created);
+    } else if (sort === "recent") {
+      templates.sort((a, b) => b.created - a.created);
+    } else {
+      templates.sort((a, b) => b.uses + templateStars(b.id) * 3 - (a.uses + templateStars(a.id) * 3) || b.created - a.created);
+    }
+    sendJson(res, 200, {
+      templates: templates.slice(0, 100).map((template) => publicTemplate(template, user)),
+      mine: Object.values(store.templates).filter((template) => templateOwnedBy(template, user)).length,
+      max: TEMPLATE_LIMIT,
+    });
+    return;
+  }
+
+  const templateMatch = pathname.match(/^\/api\/templates\/(\d{1,9})(?:\/(fav|use))?$/);
+  if (req.method === "GET" && templateMatch && !templateMatch[2]) {
+    const template = store.templates[templateMatch[1]];
+    const user = currentUser(req)?.user || null;
+    if (!templateAccessible(template, user)) {
+      sendJson(res, 404, { error: "not_found" });
+      return;
+    }
+    sendJson(res, 200, { template: publicTemplate(template, user, true) });
+    return;
+  }
+
   const session = requireUser(req, res);
   if (!session) return;
+
+  if (req.method === "POST" && pathname === "/api/templates") {
+    if (!checkOrigin(req, res)) return;
+    const body = await readJson(req, 2 * 1024 * 1024);
+    const owned = Object.values(store.templates).filter((template) => templateOwnedBy(template, session.user));
+    if (owned.length >= TEMPLATE_LIMIT) {
+      sendJson(res, 403, { error: "limit" });
+      return;
+    }
+    if (!body.profile || typeof body.profile !== "object" || Array.isArray(body.profile)) {
+      sendJson(res, 400, { error: "Perfil do template inválido." });
+      return;
+    }
+    const fields = cleanTemplateFields(body);
+    let id;
+    do {
+      id = String(crypto.randomInt(100000000, 1000000000));
+    } while (store.templates[id]);
+    const template = {
+      id,
+      ...fields,
+      ownerId: session.user.discordId,
+      ownerSlug: session.user.slug,
+      ownerName: session.user.dn,
+      created: Date.now(),
+      uses: 0,
+      premium: false,
+    };
+    store.templates[id] = template;
+    saveStore();
+    sendJson(res, 201, { template: publicTemplate(template, session.user, true) });
+    return;
+  }
+
+  if (templateMatch && templateMatch[2] === "fav" && req.method === "POST") {
+    if (!checkOrigin(req, res)) return;
+    const template = store.templates[templateMatch[1]];
+    if (!template || templateOwnedBy(template, session.user) || template.vis === "private") {
+      sendJson(res, 404, { error: "not_found" });
+      return;
+    }
+    const favorites = (store.templateFavorites[session.user.discordId] ||= []);
+    const index = favorites.indexOf(template.id);
+    if (index >= 0) favorites.splice(index, 1);
+    else favorites.push(template.id);
+    saveStore();
+    sendJson(res, 200, { template: publicTemplate(template, session.user) });
+    return;
+  }
+
+  if (templateMatch && templateMatch[2] === "use" && req.method === "POST") {
+    if (!checkOrigin(req, res)) return;
+    const template = store.templates[templateMatch[1]];
+    if (!templateAccessible(template, session.user)) {
+      sendJson(res, 404, { error: "not_found" });
+      return;
+    }
+    const body = await readJson(req, 16 * 1024);
+    const current = store.profiles[session.user.slug] || {};
+    const keep = new Set(["dcId", "views", "vd", "dv", "src", "clicks", "cd", "nc", "ctry"]);
+    if (body.full !== true) {
+      [
+        "desc",
+        "loc",
+        "avatar",
+        "links",
+        "audios",
+        "audio",
+        "audioN",
+        "act",
+        "shuf",
+        "apl",
+        "dn",
+        "uid",
+        "alias",
+      ].forEach((key) => keep.add(key));
+    }
+    const profile = Object.assign({}, template.profile);
+    keep.forEach((key) => {
+      if (Object.hasOwn(current, key)) profile[key] = current[key];
+      else delete profile[key];
+    });
+    profile.dcId = session.user.discordId;
+    const clean = cleanProfile(profile);
+    if (Buffer.byteLength(JSON.stringify(clean), "utf8") > MAX_TEMPLATE_PROFILE_SIZE) {
+      sendJson(res, 413, { error: "too_large" });
+      return;
+    }
+    store.profiles[session.user.slug] = clean;
+    template.uses = (Number.isSafeInteger(template.uses) ? template.uses : 0) + 1;
+    const recent = (store.templateRecent[session.user.discordId] ||= []);
+    const previous = recent.indexOf(template.id);
+    if (previous >= 0) recent.splice(previous, 1);
+    recent.unshift(template.id);
+    recent.length = Math.min(recent.length, 50);
+    saveStore();
+    sendJson(res, 200, { profile: clean });
+    return;
+  }
+
+  if (templateMatch && !templateMatch[2] && req.method === "PATCH") {
+    if (!checkOrigin(req, res)) return;
+    const template = store.templates[templateMatch[1]];
+    if (!template) {
+      sendJson(res, 404, { error: "not_found" });
+      return;
+    }
+    if (!templateOwnedBy(template, session.user)) {
+      sendJson(res, 403, { error: "forbidden" });
+      return;
+    }
+    const body = await readJson(req, 2 * 1024 * 1024);
+    const fields = cleanTemplateFields(body, template);
+    Object.assign(template, fields, {
+      ownerSlug: session.user.slug,
+      ownerName: session.user.dn,
+    });
+    saveStore();
+    sendJson(res, 200, { template: publicTemplate(template, session.user, true) });
+    return;
+  }
+
+  if (templateMatch && !templateMatch[2] && req.method === "DELETE") {
+    if (!checkOrigin(req, res)) return;
+    const template = store.templates[templateMatch[1]];
+    if (!template) {
+      sendJson(res, 404, { error: "not_found" });
+      return;
+    }
+    if (!templateOwnedBy(template, session.user)) {
+      sendJson(res, 403, { error: "forbidden" });
+      return;
+    }
+    delete store.templates[template.id];
+    for (const favorites of Object.values(store.templateFavorites)) {
+      if (Array.isArray(favorites)) {
+        const index = favorites.indexOf(template.id);
+        if (index >= 0) favorites.splice(index, 1);
+      }
+    }
+    for (const recent of Object.values(store.templateRecent)) {
+      if (Array.isArray(recent)) {
+        const index = recent.indexOf(template.id);
+        if (index >= 0) recent.splice(index, 1);
+      }
+    }
+    saveStore();
+    sendJson(res, 200, { ok: true });
+    return;
+  }
 
   if (req.method === "POST" && pathname === "/api/rename") {
     if (!checkOrigin(req, res)) return;
@@ -632,6 +949,12 @@ async function handleApi(req, res, url) {
     }
     for (const upload of uploadParts.values()) {
       if (upload.slug === oldSlug) upload.slug = slug;
+    }
+    for (const template of Object.values(store.templates)) {
+      if (templateOwnedBy(template, user)) {
+        template.ownerSlug = slug;
+        template.ownerName = user.dn;
+      }
     }
     saveStore();
     sendJson(res, 200, { user: publicUser(user) });
