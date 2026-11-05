@@ -16,6 +16,10 @@
   status = 200
   force = true
 
+[[edge_functions]]
+  function = "profile-preview"
+  path = "/:slug"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

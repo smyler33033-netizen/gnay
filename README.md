@@ -39,6 +39,10 @@ O plano gratuito não mantém arquivos locais após reinícios; não use para gu
 
 O arquivo `netlify.toml` configura esses encaminhamentos para `https://gnay-api.onrender.com`. Inclua-o no deploy do Netlify para ativar o login e as APIs no domínio publicado.
 
+## Prévia de perfil ao compartilhar no Discord
+
+A Edge Function `netlify/edge-functions/profile-preview.ts` usa os dados públicos do backend para montar os metadados Open Graph de cada URL `/<nome>`. O Netlify publica essa função junto com o site; mantenha a rota `/:slug` configurada no `netlify.toml`. O serviço do Render também precisa estar acessível para que o Discord receba nome, bio e avatar corretos. Pré-visualizações que já foram enviadas podem continuar em cache pelo Discord.
+
 Os contadores públicos e as estatísticas do painel são calculados a partir das contas, arquivos enviados e eventos reais de visualização e clique armazenados pelo backend. Dados de país são registrados quando o Netlify encaminha o código de país da visita. Como o serviço gratuito do Render usa armazenamento temporário, esses dados podem ser perdidos quando o serviço reinicia.
 
 Integrações como pagamentos, MFA, templates e recursos administrativos continuam dependendo de serviços adicionais.

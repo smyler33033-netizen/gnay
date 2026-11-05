@@ -1941,6 +1941,31 @@
         display: grid;
         place-items: center;
       }
+      .bi .bic {
+        position: relative;
+      }
+      .bi .provider-badge {
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+        width: 23px;
+        height: 23px;
+        display: grid;
+        place-items: center;
+        border: 2px solid #121212;
+        border-radius: 50%;
+        background: #1ed760;
+        color: #fff;
+        box-sizing: border-box;
+      }
+      .bi .provider-badge.youtube {
+        background: #f00;
+      }
+      .bi .provider-badge svg {
+        display: block;
+        width: 14px;
+        height: 14px;
+      }
       .bi .ms {
         font-variation-settings: "FILL" 1;
       }
@@ -2354,6 +2379,9 @@
       }
       .pfp.pfp-provider .pf-volume input[type="range"] {
         width: 52px;
+      }
+      .pfp.pfp-provider[data-provider="spotify"] .pf-volume input[type="range"] {
+        display: none;
       }
       .pfp .mid {
         flex: 1;
@@ -7307,7 +7335,7 @@
         <label style="display: block; font-size: 22px; margin: 0 6px 10px">Título do áudio</label>
         <div class="url" style="margin-bottom: 10px">
           <span class="ms" style="font-size: 30px; color: #999">music_note</span
-          ><input id="naT" placeholder="Adicionar um título..." maxlength="40" />
+          ><input id="naT" placeholder="Adicionar um título..." maxlength="200" />
         </div>
         <p id="naE" style="color: #ff7b7b; font-size: 19px; min-height: 22px; margin: 0 0 10px 6px"></p>
         <button class="btn dark" id="naGo" style="background: #262626; border-radius: 14px; padding: 16px 30px">
@@ -9502,7 +9530,7 @@
             last;
           for (let t = 0; t < 3 && !ok; t++) {
             try {
-              await upPost("/api/upload/part?id=" + id + "&i=" + i + "&n=" + n, part, "application/octet-stream");
+              await upPost("/api/upload/part/" + id + "/" + i + "/" + n, part, "application/octet-stream");
               ok = true;
             } catch (e) {
               last = e;
@@ -11000,6 +11028,7 @@
             if (!/^[A-Za-z0-9_-]{11}$/.test(id || "")) return null;
             return {
               provider: "youtube",
+              id,
               url: "https://www.youtube.com/watch?v=" + id,
               embed: "https://www.youtube-nocookie.com/embed/" + id + "?rel=0",
             };
@@ -11009,6 +11038,7 @@
             if (!match) return null;
             return {
               provider: "spotify",
+              id: match[1],
               url: "https://open.spotify.com/track/" + match[1],
               uri: "spotify:track:" + match[1],
               embed: "https://open.spotify.com/embed/track/" + match[1] + "?utm_source=generator",
@@ -11016,6 +11046,34 @@
           }
         } catch (e) {}
         return null;
+      }
+      async function fetchAudioInfo(parsed) {
+        if (!parsed || !["spotify", "youtube"].includes(parsed.provider)) return null;
+        const response = await fetch(
+          "/api/audio-info?provider=" +
+            encodeURIComponent(parsed.provider) +
+            "&id=" +
+            encodeURIComponent(parsed.id),
+        );
+        if (!response.ok) {
+          let message = "Não foi possível carregar o título e a capa dessa música.";
+          try {
+            const data = await response.json();
+            if (data && data.error) message = data.error;
+          } catch (e) {}
+          throw new Error(message);
+        }
+        const data = await response.json();
+        return {
+          title: typeof data.title === "string" ? data.title.trim().slice(0, 200) : "",
+          image:
+            typeof data.image === "string" &&
+            (parsed.provider === "spotify"
+              ? /^https:\/\/(image-cdn-ak\.spotifycdn\.com|image-cdn\.scdn\.co|i\.scdn\.co)\//.test(data.image)
+              : /^https:\/\/i\.ytimg\.com\//.test(data.image))
+              ? data.image
+              : "",
+        };
       }
       let spotifyIframeApiPromise;
       function loadSpotifyIframeApi() {
@@ -11043,19 +11101,28 @@
         dnd: ["#ed4245", "Não perturbe", "do_not_disturb_on"],
         offline: ["#80848e", "Offline", "circle"],
       };
-      const DC_FL = [
-        [1, "Staff do Discord", "shield_person"],
-        [2, "Parceiro", "handshake"],
-        [4, "HypeSquad Events", "celebration"],
-        [8, "Caçador de bugs", "bug_report"],
-        [64, "HypeSquad Bravery", "shield"],
-        [128, "HypeSquad Brilliance", "shield"],
-        [256, "HypeSquad Balance", "shield"],
-        [512, "Apoiador inicial", "star"],
-        [16384, "Caçador de bugs nível 2", "bug_report"],
-        [131072, "Dev de bot verificado", "verified"],
-        [4194304, "Desenvolvedor ativo", "code"],
-      ];
+      function dcPremiumBadges(user, presence) {
+        user = user || {};
+        presence = presence || {};
+        const premiumType = Number(user.premium_type || presence.premium_type) || 0;
+        const badges = [];
+        if ([1, 2, 3].includes(premiumType) || user.nitro === true || presence.nitro === true) {
+          badges.push(["Nitro", "diamond"]);
+        }
+        const boostSince =
+          user.premium_since ||
+          presence.premium_since ||
+          user.boosting_since ||
+          presence.boosting_since;
+        if (
+          user.is_boosting === true ||
+          presence.is_boosting === true ||
+          (typeof boostSince === "string" && boostSince.trim() !== "")
+        ) {
+          badges.push(["Impulsionador do servidor", "rocket_launch"]);
+        }
+        return badges;
+      }
       const DC_VB = ["Jogando", "Transmitindo", "Ouvindo", "Assistindo", "", "Competindo"];
       function dcFetch(id) {
         const c = (DCC[id] = DCC[id] || { t: 0 });
@@ -11223,18 +11290,15 @@
           st.style.color = s[0];
           st.style.fontVariationSettings = "'FILL' 1";
           bd.innerHTML = "";
-          const fl = Number(u.public_flags) || 0;
-          DC_FL.forEach(([b, n, ic]) => {
-            if (fl & b) {
-              const e = document.createElement("span");
-              e.title = n;
-              e.setAttribute("aria-label", n);
-              const m = document.createElement("span");
-              m.className = "ms";
-              m.textContent = ic;
-              e.appendChild(m);
-              bd.appendChild(e);
-            }
+          dcPremiumBadges(u, d).forEach(([name, icon]) => {
+            const badge = document.createElement("span");
+            badge.title = name;
+            badge.setAttribute("aria-label", name);
+            const mark = document.createElement("span");
+            mark.className = "ms";
+            mark.textContent = icon;
+            badge.appendChild(mark);
+            bd.appendChild(badge);
           });
           bd.style.display = bd.children.length ? "" : "none";
           const acts = tg["Atividades do Discord"] === false ? [] : d.activities || [],
@@ -12871,17 +12935,8 @@
             .then((d) => {
               if (!nr.isConnected) return;
               const user = d.discord_user || {},
-                flags = Number(user.public_flags) || 0,
-                clan = user.primary_guild || user.clan,
-                clanId = clan && (clan.identity_guild_id || clan.identity_guild),
-                showClan =
-                  clan &&
-                  clan.tag &&
-                  clan.identity_enabled !== false &&
-                  /^\d{5,25}$/.test(String(clanId || "")) &&
-                  /^[A-Za-z0-9_]{3,64}$/.test(String(clan.badge || ""));
-              const entries = DC_FL.filter(([bit]) => flags & bit);
-              if (!entries.length && !showClan) return;
+                entries = dcPremiumBadges(user, d);
+              if (!entries.length) return;
               let row = nr.querySelector(".dc-public-badges");
               if (!row) {
                 row = document.createElement("div");
@@ -12890,7 +12945,7 @@
                 nr.appendChild(row);
               }
               row.replaceChildren();
-              entries.forEach(([, name, icon]) => {
+              entries.forEach(([name, icon]) => {
                 const badge = document.createElement("span");
                 badge.className = "bdi";
                 badge.tabIndex = 0;
@@ -12903,28 +12958,6 @@
                 badge.appendChild(mark);
                 row.appendChild(badge);
               });
-              if (showClan) {
-                const badge = document.createElement("span");
-                badge.className = "bdi dcb";
-                badge.tabIndex = 0;
-                badge.dataset.n = "Insígnia do servidor " + String(clan.tag).slice(0, 6);
-                badge.setAttribute("aria-label", badge.dataset.n);
-                const image = document.createElement("img");
-                image.src =
-                  "https://cdn.discordapp.com/clan-badges/" +
-                  clanId +
-                  "/" +
-                  clan.badge +
-                  ".png?size=64";
-                image.alt = "";
-                image.width = 30;
-                image.height = 30;
-                image.loading = "lazy";
-                image.referrerPolicy = "no-referrer";
-                image.onerror = () => badge.remove();
-                badge.appendChild(image);
-                row.appendChild(badge);
-              }
             })
             .catch((error) => console.error("Falha ao carregar insígnias do Discord no perfil:", error));
         }
@@ -13057,7 +13090,10 @@
           if (window.ResizeObserver) new ResizeObserver(fit).observe(c);
           setTimeout(fit, 0);
         }
-        let go = () => {};
+        let go = () => {},
+          enterSplash = null,
+          spotifyReady = false,
+          spotifyError = false;
         let A = Q.audios || [];
         if (!A.length && Q.audio) A = [{ id: "a0", t: Q.audioN || "Áudio", src: Q.audio, d: 0 }];
         if (A.length && !opt.prev) {
@@ -13124,7 +13160,6 @@
             vol = v;
             a1.volume = v;
             a2.volume = v;
-            if (spotifyController) spotifyController.setVolume(v);
             if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
               const command = (func, args = []) =>
                 embedFrame.contentWindow.postMessage(
@@ -13140,7 +13175,7 @@
           };
           const sync = () => {
             const playing = embedProvider ? wantPlay : !au.paused;
-            if (vb) vb.firstChild.textContent = playing ? "volume_up" : "volume_off";
+            if (vb) vb.firstChild.textContent = playing ? "pause" : "play_arrow";
             if (pi) pi.textContent = playing ? "pause" : "play_arrow";
           };
           const play = () => {
@@ -13176,8 +13211,11 @@
             embedTarget = null;
             embedProvider = "";
             embedWrap = null;
+            spotifyReady = false;
+            spotifyError = false;
             if (pl) {
               pl.classList.remove("pfp-provider");
+              delete pl.dataset.provider;
               pl.style.display = "";
               pl.querySelector(".tr").style.display = "";
               pl.querySelector(".ctl").style.display = "";
@@ -13219,7 +13257,10 @@
             clearEmbed();
             const parsed = parseAudioLink(itm.url);
             if (!parsed || parsed.provider !== itm.provider) return;
-            if (pl) pl.classList.add("pfp-provider");
+            if (pl) {
+              pl.classList.add("pfp-provider");
+              pl.dataset.provider = itm.provider;
+            }
             embedWrap = document.createElement("div");
             embedWrap.style.cssText =
               "position:fixed;left:-10000px;top:0;width:300px;height:152px;overflow:hidden";
@@ -13239,14 +13280,18 @@
                   if (!target.isConnected) return;
                   api.createController(
                     target,
-                    { uri: parsed.uri, width: "300", height: "152" },
+                    { uri: parsed.uri, width: 300, height: 152 },
                     (controller) => {
                       if (!target.isConnected) {
                         controller.pause();
                         return;
                       }
                       spotifyController = controller;
-                      setVol(vol);
+                      spotifyReady = true;
+                      if (enterSplash && enterSplash.isConnected) {
+                        enterSplash.querySelector(".pfs-title").textContent = Q.et || "clique para entrar";
+                        enterSplash.style.cursor = "pointer";
+                      }
                       if (wantPlay) controller.play();
                     },
                   );
@@ -13264,6 +13309,12 @@
                   embedFrame.style.cssText = "display:block;width:300px;height:152px;border:0";
                   target.replaceWith(embedFrame);
                   embedTarget = null;
+                  spotifyError = true;
+                  spotifyReady = true;
+                  if (enterSplash && enterSplash.isConnected) {
+                    enterSplash.querySelector(".pfs-title").textContent = "Clique para abrir no Spotify";
+                    enterSplash.style.cursor = "pointer";
+                  }
                 });
             }
             sync();
@@ -13271,11 +13322,12 @@
           const playEmbed = () => {
             wantPlay = true;
             if (embedProvider === "spotify") {
-              if (spotifyController) spotifyController.play();
+              if (spotifyController) {
+                spotifyController.play();
+              }
               else if (embedFrame) {
-                const src = new URL(embedFrame.src);
-                src.searchParams.set("autoplay", "1");
-                embedFrame.src = src.href;
+                const current = A[ix];
+                if (current && current.url) window.open(current.url, "_blank", "noopener");
               }
               sync();
               return;
@@ -13299,18 +13351,14 @@
           };
           vb = document.createElement("button");
           vb.className = "pfb";
-          vb.setAttribute("aria-label", "Ligar ou desligar o som");
-          vb.innerHTML = '<span class="ms" style="font-size:30px">volume_off</span>';
+          vb.setAttribute("aria-label", "Tocar ou pausar");
+          vb.innerHTML = '<span class="ms" style="font-size:26px">play_arrow</span>';
           const toggle = () => {
             if (embedProvider) {
               wantPlay = !wantPlay;
               if (wantPlay) playEmbed();
               else if (embedProvider === "spotify" && spotifyController) spotifyController.pause();
-              else if (embedProvider === "spotify" && embedFrame) {
-                const src = new URL(embedFrame.src);
-                src.searchParams.set("autoplay", "0");
-                embedFrame.src = src.href;
-              }
+              else if (embedProvider === "spotify" && embedFrame) embedFrame.src = "about:blank";
               else if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
                 embedFrame.contentWindow.postMessage(
                   JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
@@ -13354,6 +13402,8 @@
                 if (cvE.firstChild) cvE.firstChild.style.display = u ? "none" : "";
               };
             pl.classList.toggle("pfp-provider", !!itm.provider);
+            if (itm.provider) pl.dataset.provider = itm.provider;
+            else delete pl.dataset.provider;
             setCv(itm.cv || "");
             let badge = cvE.querySelector(".provider-badge");
             if (itm.provider) {
@@ -13502,8 +13552,12 @@
           if (A[ix].provider) showEmbed(A[ix]);
           go = () => {
             if (A[ix].provider) {
-              playEmbed();
+            if (A[ix].provider === "spotify" && spotifyError) {
+              window.open(A[ix].url, "_blank", "noopener");
               return;
+            }
+            playEmbed();
+            return;
             }
             wantPlay = true;
             playWhenReady();
@@ -13545,11 +13599,18 @@
           sp.style.justifyContent = "center";
           const h1 = document.createElement("div");
           h1.textContent = Q.et || "clique para entrar";
+          h1.className = "pfs-title";
+          enterSplash = sp;
+          if (A[ix] && A[ix].provider === "spotify" && !spotifyReady) {
+            h1.textContent = "Carregando música…";
+            sp.style.cursor = "wait";
+          }
           const h2 = document.createElement("div");
           h2.style.cssText = "font-size:19px;font-weight:300;opacity:.7";
           h2.textContent = Q.es || "";
           sp.append(h1, h2);
           sp.onclick = () => {
+            if (A[ix] && A[ix].provider === "spotify" && !spotifyReady) return;
             sp.remove();
             go();
             late.forEach((f) => f && f());
@@ -14530,6 +14591,17 @@
             ic.innerHTML = "";
             ic.style.background = 'center/cover url("' + a.cv + '")';
           }
+          if (a.provider) {
+            const providerIcon = document.createElement("span");
+            providerIcon.className = "provider-badge " + a.provider;
+            providerIcon.title = a.provider === "spotify" ? "Spotify" : "YouTube";
+            providerIcon.setAttribute("aria-label", providerIcon.title);
+            providerIcon.innerHTML =
+              a.provider === "spotify"
+                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5c4.2-1.2 9.6-.7 13 1.4M6 12c3.5-1 7.8-.5 10.5 1.2M7 15.2c2.8-.7 5.8-.3 8.2.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+                : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4a2.5 2.5 0 0 0-1.8 1.8A26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15.2V8.8l5.5 3.2-5.5 3.2Z" fill="currentColor"/></svg>';
+            r.querySelector(".bic").appendChild(providerIcon);
+          }
           r.onclick = () => {
             P.act = a.id;
             saveP();
@@ -14617,7 +14689,14 @@
         return (m && AUD_EXT[m[1]]) || (t === "audio/x-wav" || t === "audio/wave" ? "audio/wav" : "");
       };
       function openAudEdit(a) {
-        nA = { edit: a.id };
+        nA = {
+          edit: a.id,
+          nameEdited: false,
+          autoTitle:
+            !!a.titleAuto || a.t === "Música do Spotify" || a.t === "Vídeo do YouTube",
+          autoCover: !!a.cvAuto,
+          cover: !!a.cv,
+        };
         $("#naFile").value = "";
         $("#naCov").value = "";
         $("#naUrl").value = a.url || "";
@@ -14682,6 +14761,7 @@
             (b) => {
               if (b) {
                 nA.cvBlob = b;
+                nA.cvCustom = true;
                 $("#naC").textContent = f.name;
                 $("#naE").textContent = "";
               }
@@ -14696,13 +14776,42 @@
         };
         im.src = u;
       };
+      $("#naT").oninput = () => {
+        nA.nameEdited = true;
+      };
       $("#naUrl").oninput = (e) => {
-        if (e.target.value.trim()) {
+        const value = e.target.value.trim(),
+          sequence = (nA.infoSeq || 0) + 1;
+        nA.infoSeq = sequence;
+        delete nA.linkTitle;
+        delete nA.linkImage;
+        if (value) {
           $("#naFile").value = "";
           nA.file = null;
           nA.mime = null;
           delete nA.name;
           delete nA.d;
+          const parsed = parseAudioLink(value);
+          if (!parsed) return;
+          $("#naE").textContent = "Buscando nome e capa da música…";
+          nA.infoPromise = fetchAudioInfo(parsed)
+            .then((info) => {
+              if (sequence !== nA.infoSeq) return;
+              nA.linkTitle = info && info.title;
+              nA.linkImage = info && info.image;
+              if (!nA.nameEdited && (nA.autoTitle || !$("#naT").value.trim()) && nA.linkTitle)
+                $("#naT").value = nA.linkTitle;
+              if (nA.linkImage && (!nA.edit || nA.autoCover || !nA.cover)) {
+                $("#naC").textContent = "Capa encontrada no " + (parsed.provider === "spotify" ? "Spotify" : "YouTube");
+              }
+              $("#naE").textContent = "";
+            })
+            .catch((error) => {
+              if (sequence !== nA.infoSeq) return;
+              console.error("Falha ao carregar os dados da faixa:", error);
+              $("#naE").textContent = error.message || "Não foi possível carregar o nome e a capa. Você ainda pode salvar o link.";
+              return null;
+            });
         }
       };
       $("#naGo").onclick = async () => {
@@ -14729,8 +14838,16 @@
         btn.disabled = true;
         $("#naE").textContent = "Enviando…";
         try {
-          let media = ed
-            ? { src: ed.src, provider: ed.provider, url: ed.url, d: ed.d }
+        if (link && nA.infoPromise && (!nA.linkTitle || !nA.linkImage)) await nA.infoPromise;
+        let media = ed
+          ? {
+                src: ed.src,
+                provider: ed.provider,
+                url: ed.url,
+                d: ed.d,
+                titleAuto: ed.titleAuto,
+                cvAuto: ed.cvAuto,
+              }
             : {},
             cv = ed ? ed.cv : undefined,
             d = ed ? ed.d : 0;
@@ -14742,25 +14859,41 @@
             };
             d = nA.d;
           } else if (link) {
-            media = { provider: link.provider, url: link.url };
+            media = {
+              provider: link.provider,
+              url: link.url,
+              titleAuto: !nA.nameEdited && (!ed || nA.autoTitle),
+            };
             d = 0;
           }
-          if (nA.cvBlob) cv = await upl(nA.cvBlob, "image/jpeg");
+          if (link && nA.linkImage && (!ed || nA.autoCover || !nA.cover)) {
+            cv = nA.linkImage;
+            media.cvAuto = true;
+          } else if (link && ed && ed.cv && !ed.cvAuto) {
+            cv = ed.cv;
+            media.cvAuto = false;
+          }
+          if (nA.cvBlob) {
+            cv = await upl(nA.cvBlob, "image/jpeg");
+            media.cvAuto = !nA.cvCustom;
+          }
           const t =
-            $("#naT").value.trim().slice(0, 40) ||
+            $("#naT").value.trim().slice(0, 200) ||
+            nA.linkTitle ||
             (ed ? ed.t : nA.name) ||
             (link ? (link.provider === "spotify" ? "Música do Spotify" : "Vídeo do YouTube") : "Áudio");
+          const title = t;
           if (ed) {
-            ed.t = t;
+            ed.t = title;
             delete ed.src;
             delete ed.provider;
             delete ed.url;
             Object.assign(ed, media);
             ed.d = d;
             if (cv) ed.cv = cv;
-            else delete ed.cv;
+            else if (!link || media.cvAuto) delete ed.cv;
           } else {
-            const a = { id: "a" + Date.now(), t, ...media, d };
+            const a = { id: "a" + Date.now(), t: title, ...media, d };
             if (cv) a.cv = cv;
             P.audios = P.audios || [];
             P.audios.push(a);
