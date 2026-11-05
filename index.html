@@ -2283,7 +2283,8 @@
         top: calc(var(--safe-t) + 14px);
         left: 50%;
         transform: translateX(-50%);
-        width: min(920px, calc(100vw - 28px));
+        width: min(560px, calc(100vw - 28px));
+        box-sizing: border-box;
         z-index: 6;
         color: #fff;
         flex: none;
@@ -2291,11 +2292,34 @@
         gap: 12px;
       }
       .pfp .cv {
+        position: relative;
         width: 56px;
         height: 56px;
         border-radius: 14px;
         background: #2a2a2a center/cover;
         flex: none;
+      }
+      .pfp .provider-badge {
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+        width: 23px;
+        height: 23px;
+        display: grid;
+        place-items: center;
+        border: 2px solid #171717;
+        border-radius: 50%;
+        background: #1ed760;
+        color: #fff;
+        box-sizing: border-box;
+      }
+      .pfp .provider-badge.youtube {
+        background: #f00;
+      }
+      .pfp .provider-badge svg {
+        display: block;
+        width: 14px;
+        height: 14px;
       }
       .pfp .mid {
         flex: 1;
@@ -13001,10 +13025,24 @@
             vol = v;
             a1.volume = v;
             a2.volume = v;
+            if (spotifyController) spotifyController.setVolume(v);
+            if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
+              const command = (func, args = []) =>
+                embedFrame.contentWindow.postMessage(
+                  JSON.stringify({ event: "command", func, args }),
+                  "https://www.youtube-nocookie.com",
+                );
+              if (v <= 0) command("mute");
+              else {
+                command("unMute");
+                command("setVolume", [Math.round(v * 100)]);
+              }
+            }
           };
           const sync = () => {
-            if (vb) vb.firstChild.textContent = au.paused ? "volume_off" : "volume_up";
-            if (pi) pi.textContent = au.paused ? "play_arrow" : "pause";
+            const playing = embedProvider ? wantPlay : !au.paused;
+            if (vb) vb.firstChild.textContent = playing ? "volume_up" : "volume_off";
+            if (pi) pi.textContent = playing ? "pause" : "play_arrow";
           };
           const play = () => {
             wantPlay = true;
@@ -13055,18 +13093,19 @@
             const src = new URL(parsed.embed);
             src.searchParams.set("autoplay", autoplay ? "1" : "0");
             src.searchParams.set("enablejsapi", "1");
+            src.searchParams.set("controls", "0");
+            src.searchParams.set("playsinline", "1");
             if (/^https?:$/.test(location.protocol)) src.searchParams.set("origin", location.origin);
             embedFrame = document.createElement("iframe");
             const frame = embedFrame;
             frame.src = src.href;
             frame.title = "Player de YouTube: " + A[ix].t;
-            frame.loading = "lazy";
             frame.referrerPolicy = "strict-origin-when-cross-origin";
             frame.allow = "autoplay; encrypted-media; picture-in-picture";
-            frame.allowFullscreen = true;
-            frame.style.cssText = "display:block;width:100%;border:0;border-radius:12px;aspect-ratio:16/9;height:auto";
+            frame.style.cssText = "display:block;width:1px;height:1px;border:0";
             const playVideo = () => {
               if (!wantPlay || !frame.isConnected || !frame.contentWindow) return;
+              setVol(vol);
               frame.contentWindow.postMessage(
                 JSON.stringify({ event: "command", func: "playVideo", args: [] }),
                 "https://www.youtube-nocookie.com",
@@ -13082,16 +13121,16 @@
             if (!parsed || parsed.provider !== itm.provider) return;
             embedWrap = document.createElement("div");
             embedWrap.style.cssText =
-              "width:min(420px,100%);margin:8px auto 0;overflow:hidden;border-radius:12px";
+              "position:fixed;left:-10000px;top:0;width:1px;height:1px;overflow:hidden";
             embedProvider = itm.provider;
             if (itm.provider === "youtube") {
               youtubeFrame(parsed, wantPlay);
             } else {
               embedTarget = document.createElement("div");
-              embedTarget.style.cssText = "width:100%;min-width:280px;height:152px";
+              embedTarget.style.cssText = "width:1px;height:1px";
               embedWrap.appendChild(embedTarget);
             }
-            c.appendChild(embedWrap);
+            root.appendChild(embedWrap);
             if (itm.provider === "spotify") {
               const target = embedTarget;
               loadSpotifyIframeApi()
@@ -13099,13 +13138,14 @@
                   if (!target.isConnected) return;
                   api.createController(
                     target,
-                    { uri: parsed.uri, width: "100%", height: "152" },
+                    { uri: parsed.uri, width: "1", height: "1" },
                     (controller) => {
                       if (!target.isConnected) {
                         controller.pause();
                         return;
                       }
                       spotifyController = controller;
+                      setVol(vol);
                       if (wantPlay) controller.play();
                     },
                   );
@@ -13118,32 +13158,26 @@
                   if (wantPlay) fallbackUrl.searchParams.set("autoplay", "1");
                   embedFrame.src = fallbackUrl.href;
                   embedFrame.title = "Player de Spotify: " + itm.t;
-                  embedFrame.loading = "lazy";
                   embedFrame.referrerPolicy = "strict-origin-when-cross-origin";
                   embedFrame.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture";
-                  embedFrame.style.cssText = "display:block;width:100%;height:152px;border:0;border-radius:12px";
+                  embedFrame.style.cssText = "display:block;width:1px;height:1px;border:0";
                   target.replaceWith(embedFrame);
                   embedTarget = null;
                 });
             }
-            if (pl) {
-              pl.querySelector(".tr").style.display = "none";
-              pl.querySelector(".ctl").style.display = A.length <= 1 ? "none" : "";
-              pl.querySelectorAll(".ctl .pfb")[1].style.display = "none";
-            }
-            if (volumeGroup) volumeGroup.style.display = "none";
-            else {
-              if (vb) vb.style.display = "none";
-              if (vr) vr.style.display = "none";
-            }
+            sync();
           };
           const playEmbed = () => {
             wantPlay = true;
             if (embedProvider === "spotify") {
               if (spotifyController) spotifyController.play();
+              sync();
               return;
             }
-            if (embedProvider !== "youtube" || !embedFrame) return;
+            if (embedProvider !== "youtube" || !embedFrame) {
+              sync();
+              return;
+            }
             const src = new URL(embedFrame.src);
             if (src.searchParams.get("autoplay") !== "1") {
               src.searchParams.set("autoplay", "1");
@@ -13155,12 +13189,26 @@
                 "https://www.youtube-nocookie.com",
               );
             }
+            sync();
           };
           vb = document.createElement("button");
           vb.className = "pfb";
           vb.setAttribute("aria-label", "Ligar ou desligar o som");
           vb.innerHTML = '<span class="ms" style="font-size:30px">volume_off</span>';
           const toggle = () => {
+            if (embedProvider) {
+              wantPlay = !wantPlay;
+              if (wantPlay) playEmbed();
+              else if (embedProvider === "spotify" && spotifyController) spotifyController.pause();
+              else if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
+                embedFrame.contentWindow.postMessage(
+                  JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+                  "https://www.youtube-nocookie.com",
+                );
+              }
+              sync();
+              return;
+            }
             if (au.paused) {
               wantPlay = true;
               playWhenReady();
@@ -13195,6 +13243,22 @@
                 if (cvE.firstChild) cvE.firstChild.style.display = u ? "none" : "";
               };
             setCv(itm.cv || "");
+            let badge = cvE.querySelector(".provider-badge");
+            if (itm.provider) {
+              if (!badge) {
+                badge = document.createElement("span");
+                cvE.appendChild(badge);
+              }
+              badge.className = "provider-badge " + itm.provider;
+              badge.title = itm.provider === "spotify" ? "Spotify" : "YouTube";
+              badge.setAttribute("aria-label", badge.title);
+              badge.innerHTML =
+                itm.provider === "spotify"
+                  ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5c4.2-1.2 9.6-.7 13 1.4M6 12c3.5-1 7.8-.5 10.5 1.2M7 15.2c2.8-.7 5.8-.3 8.2.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+                  : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4a2.5 2.5 0 0 0-1.8 1.8A26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15.2V8.8l5.5 3.2-5.5 3.2Z" fill="currentColor"/></svg>';
+            } else if (badge) {
+              badge.remove();
+            }
             if (!itm.cv && itm.src) {
               const my = ix;
               id3Cover(itm.src).then((u) => {
@@ -13367,7 +13431,7 @@
           sp.style.alignItems = "center";
           sp.style.justifyContent = "center";
           const h1 = document.createElement("div");
-          h1.textContent = Q.et || "clique para entrar";
+          h1.textContent = Q.et || (A[ix] && A[ix].provider ? "Clique para entrar e ouvir" : "clique para entrar");
           const h2 = document.createElement("div");
           h2.style.cssText = "font-size:19px;font-weight:300;opacity:.7";
           h2.textContent = Q.es || "";
@@ -14041,6 +14105,8 @@
                     ? (e.data && e.data.error) || BADU
                     : e.status === 404
                       ? "A troca de nome ainda não está disponível no servidor. Atualize o backend."
+                      : e.status === 501
+                        ? "O backend do Render está desatualizado. Publique a versão atual do server.js no Render e tente novamente."
                       : (e.data && e.data.error) || "Não foi possível alterar o nome. Verifique a conexão e tente novamente.";
               }
               U[u] = U[S];
