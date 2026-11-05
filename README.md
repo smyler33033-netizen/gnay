@@ -39,6 +39,8 @@ O plano gratuito não mantém arquivos locais após reinícios; não use para gu
 
 O arquivo `netlify.toml` configura esses encaminhamentos para `https://gnay-api.onrender.com`. Inclua-o no deploy do Netlify para ativar o login e as APIs no domínio publicado.
 
+Se o site informar que o Discord não autorizou o login, confira se o fluxo foi concluído com **Autorizar** e se `https://gnay.netlify.app/auth/discord/callback` está cadastrado exatamente como Redirect URI no Discord Developer Portal. O estado de segurança do OAuth é validado por cookie assinado para continuar válido mesmo se o processo do Render reiniciar durante o login.
+
 ## Templates da comunidade
 
 Criar um template salva uma cópia da bio atual, incluindo visual, textos, cores, fundo, links e músicas. A visibilidade começa como pública; ao aplicar um template, a opção de copiar o perfil completo (incluindo texto e músicas) vem selecionada e pode ser desmarcada para preservar os dados atuais. Métricas e o ID do Discord não são publicados na cópia. Criar, listar, editar, favoritar, excluir e usar templates depende das rotas `/api/templates` do `server.js`. Os templates e favoritos são gravados em `data/store.json`; publique as alterações do backend no Render e do frontend no Netlify para ativar esse recurso no site. O armazenamento local do plano gratuito do Render pode ser apagado quando o serviço reinicia.

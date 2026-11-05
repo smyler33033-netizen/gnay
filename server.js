@@ -45,7 +45,6 @@ const RESERVED_SLUGS = new Set([
   "staff",
   "estatisticas",
 ]);
-const pendingOAuth = new Map();
 const uploadParts = new Map();
 const discordPresenceCache = new Map();
 const audioInfoCache = new Map();
@@ -440,9 +439,14 @@ async function handleOAuth(req, res, url) {
   }
 
   const state = crypto.randomBytes(32).toString("hex");
-  const pre = url.searchParams.get("pre") || "";
-  const add = url.searchParams.get("add") === "1";
-  pendingOAuth.set(state, { pre, add, expires: Date.now() + OAUTH_TTL });
+  const pending = Buffer.from(
+    JSON.stringify({
+      state,
+      pre: (url.searchParams.get("pre") || "").slice(0, 40),
+      expires: Date.now() + OAUTH_TTL,
+    }),
+  ).toString("base64url");
+  const signature = crypto.createHmac("sha256", clientSecret).update(pending).digest("base64url");
   const authorization = new URL("https://discord.com/oauth2/authorize");
   authorization.searchParams.set("client_id", clientId);
   authorization.searchParams.set("redirect_uri", redirectUri);
@@ -453,7 +457,9 @@ async function handleOAuth(req, res, url) {
     res,
     authorization.toString(),
     "gnay_oauth=" +
-      state +
+      pending +
+      "." +
+      signature +
       "; Path=/; HttpOnly; SameSite=Lax; Max-Age=600" +
       (redirectUri.startsWith("https://") ? "; Secure" : ""),
   );
@@ -462,15 +468,40 @@ async function handleOAuth(req, res, url) {
 async function handleOAuthCallback(req, res, url) {
   const state = url.searchParams.get("state") || "";
   const savedState = cookieValue(req, "gnay_oauth");
-  const pending = pendingOAuth.get(state);
-  pendingOAuth.delete(state);
   const clearState = "gnay_oauth=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
-  if (!state || state !== savedState || !pending || pending.expires < Date.now()) {
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+  if (!process.env.DISCORD_CLIENT_ID || !clientSecret) {
+    redirect(res, "/?e=config", clearState);
+    return;
+  }
+  const [encodedPending, encodedSignature, extra] = savedState.split(".");
+  let pending = null;
+  if (encodedPending && encodedSignature && extra === undefined) {
+    const expectedSignature = crypto.createHmac("sha256", clientSecret).update(encodedPending).digest();
+    const receivedSignature = Buffer.from(encodedSignature, "base64url");
+    if (
+      receivedSignature.length === expectedSignature.length &&
+      crypto.timingSafeEqual(receivedSignature, expectedSignature)
+    ) {
+      try {
+        pending = JSON.parse(Buffer.from(encodedPending, "base64url").toString("utf8"));
+      } catch {}
+    }
+  }
+  if (
+    !state ||
+    !pending ||
+    pending.state !== state ||
+    !Number.isSafeInteger(pending.expires) ||
+    pending.expires < Date.now()
+  ) {
     redirect(res, "/?e=state", clearState);
     return;
   }
   if (url.searchParams.has("error")) {
-    redirect(res, "/?e=denied", clearState);
+    const error = url.searchParams.get("error");
+    console.warn("Discord OAuth authorization returned:", error);
+    redirect(res, error === "access_denied" ? "/?e=denied" : "/?e=discord", clearState);
     return;
   }
   const code = url.searchParams.get("code");
