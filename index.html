@@ -2321,6 +2321,40 @@
         width: 14px;
         height: 14px;
       }
+      .pfp.pfp-provider {
+        width: min(360px, calc(100vw - 24px));
+        max-width: 360px;
+        left: 12px;
+        transform: none;
+        flex: 0 1 auto;
+        padding: 6px 8px;
+        gap: 8px;
+      }
+      .pfp.pfp-provider .cv {
+        width: 36px;
+        height: 36px;
+      }
+      .pfp.pfp-provider .mid b.tt {
+        font-size: 13px !important;
+      }
+      .pfp.pfp-provider .tr,
+      .pfp.pfp-provider .ctl .pfb:first-child,
+      .pfp.pfp-provider .ctl .pfb:last-of-type {
+        display: none;
+      }
+      .pfp.pfp-provider .ctl .pfb:nth-child(2),
+      .pfp.pfp-provider .pf-volume .pfb {
+        width: 32px;
+        height: 34px;
+      }
+      .pfp.pfp-provider .pf-volume {
+        gap: 2px;
+        margin-left: 2px;
+        padding-left: 4px;
+      }
+      .pfp.pfp-provider .pf-volume input[type="range"] {
+        width: 52px;
+      }
       .pfp .mid {
         flex: 1;
         min-width: 0;
@@ -3586,6 +3620,9 @@
         }
         .pfp .pf-volume input[type="range"] {
           width: 52px;
+        }
+        .pfp.pfp-provider {
+          width: min(360px, calc(100vw - 24px));
         }
       }
 
@@ -12829,6 +12866,68 @@
             })
             .catch(() => {});
         }
+        if (Q.dcId && /^\d{15,25}$/.test(String(Q.dcId))) {
+          dcFetch(Q.dcId)
+            .then((d) => {
+              if (!nr.isConnected) return;
+              const user = d.discord_user || {},
+                flags = Number(user.public_flags) || 0,
+                clan = user.primary_guild || user.clan,
+                clanId = clan && (clan.identity_guild_id || clan.identity_guild),
+                showClan =
+                  clan &&
+                  clan.tag &&
+                  clan.identity_enabled !== false &&
+                  /^\d{5,25}$/.test(String(clanId || "")) &&
+                  /^[A-Za-z0-9_]{3,64}$/.test(String(clan.badge || ""));
+              const entries = DC_FL.filter(([bit]) => flags & bit);
+              if (!entries.length && !showClan) return;
+              let row = nr.querySelector(".dc-public-badges");
+              if (!row) {
+                row = document.createElement("div");
+                row.className = "bw dc-public-badges";
+                if (GL.b) row.style.filter = "drop-shadow(0 0 8px " + glc + ")";
+                nr.appendChild(row);
+              }
+              row.replaceChildren();
+              entries.forEach(([, name, icon]) => {
+                const badge = document.createElement("span");
+                badge.className = "bdi";
+                badge.tabIndex = 0;
+                badge.dataset.n = name;
+                badge.setAttribute("aria-label", name);
+                const mark = document.createElement("span");
+                mark.className = "ms";
+                mark.style.fontSize = "30px";
+                mark.textContent = icon;
+                badge.appendChild(mark);
+                row.appendChild(badge);
+              });
+              if (showClan) {
+                const badge = document.createElement("span");
+                badge.className = "bdi dcb";
+                badge.tabIndex = 0;
+                badge.dataset.n = "Insígnia do servidor " + String(clan.tag).slice(0, 6);
+                badge.setAttribute("aria-label", badge.dataset.n);
+                const image = document.createElement("img");
+                image.src =
+                  "https://cdn.discordapp.com/clan-badges/" +
+                  clanId +
+                  "/" +
+                  clan.badge +
+                  ".png?size=64";
+                image.alt = "";
+                image.width = 30;
+                image.height = 30;
+                image.loading = "lazy";
+                image.referrerPolicy = "no-referrer";
+                image.onerror = () => badge.remove();
+                badge.appendChild(image);
+                row.appendChild(badge);
+              }
+            })
+            .catch((error) => console.error("Falha ao carregar insígnias do Discord no perfil:", error));
+        }
         tb.appendChild(nr);
         if (Q.desc) {
           const d = document.createElement("p");
@@ -13078,6 +13177,7 @@
             embedProvider = "";
             embedWrap = null;
             if (pl) {
+              pl.classList.remove("pfp-provider");
               pl.style.display = "";
               pl.querySelector(".tr").style.display = "";
               pl.querySelector(".ctl").style.display = "";
@@ -13119,15 +13219,16 @@
             clearEmbed();
             const parsed = parseAudioLink(itm.url);
             if (!parsed || parsed.provider !== itm.provider) return;
+            if (pl) pl.classList.add("pfp-provider");
             embedWrap = document.createElement("div");
             embedWrap.style.cssText =
-              "position:fixed;left:-10000px;top:0;width:1px;height:1px;overflow:hidden";
+              "position:fixed;left:-10000px;top:0;width:300px;height:152px;overflow:hidden";
             embedProvider = itm.provider;
             if (itm.provider === "youtube") {
               youtubeFrame(parsed, wantPlay);
             } else {
               embedTarget = document.createElement("div");
-              embedTarget.style.cssText = "width:1px;height:1px";
+              embedTarget.style.cssText = "width:300px;height:152px";
               embedWrap.appendChild(embedTarget);
             }
             root.appendChild(embedWrap);
@@ -13138,7 +13239,7 @@
                   if (!target.isConnected) return;
                   api.createController(
                     target,
-                    { uri: parsed.uri, width: "1", height: "1" },
+                    { uri: parsed.uri, width: "300", height: "152" },
                     (controller) => {
                       if (!target.isConnected) {
                         controller.pause();
@@ -13160,7 +13261,7 @@
                   embedFrame.title = "Player de Spotify: " + itm.t;
                   embedFrame.referrerPolicy = "strict-origin-when-cross-origin";
                   embedFrame.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture";
-                  embedFrame.style.cssText = "display:block;width:1px;height:1px;border:0";
+                  embedFrame.style.cssText = "display:block;width:300px;height:152px;border:0";
                   target.replaceWith(embedFrame);
                   embedTarget = null;
                 });
@@ -13171,6 +13272,11 @@
             wantPlay = true;
             if (embedProvider === "spotify") {
               if (spotifyController) spotifyController.play();
+              else if (embedFrame) {
+                const src = new URL(embedFrame.src);
+                src.searchParams.set("autoplay", "1");
+                embedFrame.src = src.href;
+              }
               sync();
               return;
             }
@@ -13200,6 +13306,11 @@
               wantPlay = !wantPlay;
               if (wantPlay) playEmbed();
               else if (embedProvider === "spotify" && spotifyController) spotifyController.pause();
+              else if (embedProvider === "spotify" && embedFrame) {
+                const src = new URL(embedFrame.src);
+                src.searchParams.set("autoplay", "0");
+                embedFrame.src = src.href;
+              }
               else if (embedProvider === "youtube" && embedFrame && embedFrame.contentWindow) {
                 embedFrame.contentWindow.postMessage(
                   JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
@@ -13242,6 +13353,7 @@
                 cvE.style.backgroundImage = u ? 'url("' + u + '")' : "";
                 if (cvE.firstChild) cvE.firstChild.style.display = u ? "none" : "";
               };
+            pl.classList.toggle("pfp-provider", !!itm.provider);
             setCv(itm.cv || "");
             let badge = cvE.querySelector(".provider-badge");
             if (itm.provider) {
@@ -13417,7 +13529,8 @@
           };
         }
         const enOn = Q.en === undefined ? A.length > 0 : !!Q.en;
-        if (!opt.prev && (opt.forceSplash || (!opt.live && enOn))) {
+        const linkedAudioNeedsGesture = A.some((item) => item.provider === "spotify" || item.provider === "youtube");
+        if (!opt.prev && (opt.forceSplash || (!opt.live && (enOn || linkedAudioNeedsGesture)))) {
           gated = true;
           const sp = document.createElement("div");
           sp.className = "pfs";
@@ -13431,7 +13544,7 @@
           sp.style.alignItems = "center";
           sp.style.justifyContent = "center";
           const h1 = document.createElement("div");
-          h1.textContent = Q.et || (A[ix] && A[ix].provider ? "Clique para entrar e ouvir" : "clique para entrar");
+          h1.textContent = Q.et || "clique para entrar";
           const h2 = document.createElement("div");
           h2.style.cssText = "font-size:19px;font-weight:300;opacity:.7";
           h2.textContent = Q.es || "";
