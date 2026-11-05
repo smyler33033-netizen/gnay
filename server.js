@@ -43,6 +43,7 @@ const RESERVED_SLUGS = new Set([
 const pendingOAuth = new Map();
 const uploadParts = new Map();
 const discordPresenceCache = new Map();
+const audioInfoCache = new Map();
 const mimeTypes = {
   ".aac": "audio/aac",
   ".avif": "image/avif",
@@ -400,6 +401,66 @@ async function handleOAuthCallback(req, res, url) {
 
 async function handleApi(req, res, url) {
   const { pathname } = url;
+  if (req.method === "GET" && pathname === "/api/audio-info") {
+    const provider = url.searchParams.get("provider");
+    const id = url.searchParams.get("id");
+    const valid =
+      (provider === "spotify" && /^[A-Za-z0-9]{22}$/.test(id || "")) ||
+      (provider === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(id || ""));
+    if (!valid) {
+      sendJson(res, 400, { error: "Link de música inválido." });
+      return;
+    }
+    const key = provider + ":" + id;
+    const cached = audioInfoCache.get(key);
+    if (cached && cached.expires > Date.now()) {
+      sendJson(res, 200, cached.data);
+      return;
+    }
+    const target =
+      provider === "spotify"
+        ? "https://open.spotify.com/oembed?url=" +
+          encodeURIComponent("https://open.spotify.com/track/" + id)
+        : "https://www.youtube.com/oembed?format=json&url=" +
+          encodeURIComponent("https://www.youtube.com/watch?v=" + id);
+    let response;
+    try {
+      response = await fetch(target, {
+        headers: { accept: "application/json" },
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (error) {
+      throw Object.assign(new Error("Não foi possível carregar os dados da música."), {
+        status: error.name === "TimeoutError" ? 504 : 502,
+      });
+    }
+    if (!response.ok) {
+      sendJson(res, 404, { error: "Não foi possível encontrar essa música." });
+      return;
+    }
+    let metadata;
+    try {
+      metadata = await response.json();
+    } catch {
+      throw Object.assign(new Error("Resposta inválida ao carregar a música."), { status: 502 });
+    }
+    const image =
+      typeof metadata.thumbnail_url === "string" &&
+      (provider === "spotify"
+        ? /^https:\/\/(image-cdn-ak\.spotifycdn\.com|image-cdn\.scdn\.co|i\.scdn\.co)\//.test(metadata.thumbnail_url)
+        : /^https:\/\/i\.ytimg\.com\//.test(metadata.thumbnail_url))
+        ? metadata.thumbnail_url
+        : "";
+    const data = {
+      title: typeof metadata.title === "string" ? metadata.title.slice(0, 200) : "",
+      image,
+    };
+    if (audioInfoCache.size >= 500) audioInfoCache.delete(audioInfoCache.keys().next().value);
+    audioInfoCache.set(key, { data, expires: Date.now() + 60 * 60 * 1000 });
+    sendJson(res, 200, data, { "cache-control": "public, max-age=3600" });
+    return;
+  }
+
   const viewMatch = pathname.match(/^\/api\/view\/([a-z0-9_-]{2,20})$/);
   if (req.method === "POST" && viewMatch) {
     if (!checkOrigin(req, res)) return;
@@ -604,11 +665,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
-  if (req.method === "POST" && pathname === "/api/upload/part") {
+  if (req.method === "POST" && /^\/api\/upload\/part(?:\/|$)/.test(pathname)) {
     if (!checkOrigin(req, res)) return;
-    const id = url.searchParams.get("id") || "";
-    const index = Number(url.searchParams.get("i"));
-    const count = Number(url.searchParams.get("n"));
+    const partRoute = pathname.match(/^\/api\/upload\/part\/([a-f0-9]{32})\/(\d+)\/(\d+)$/i);
+    const id = partRoute ? partRoute[1] : url.searchParams.get("id") || "";
+    const index = Number(partRoute ? partRoute[2] : url.searchParams.get("i"));
+    const count = Number(partRoute ? partRoute[3] : url.searchParams.get("n"));
     if (
       !/^[a-f0-9]{32}$/i.test(id) ||
       !Number.isInteger(index) ||
