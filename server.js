@@ -451,7 +451,7 @@ async function handleOAuth(req, res, url) {
   authorization.searchParams.set("client_id", clientId);
   authorization.searchParams.set("redirect_uri", redirectUri);
   authorization.searchParams.set("response_type", "code");
-  authorization.searchParams.set("scope", "identify identify.premium");
+  authorization.searchParams.set("scope", "identify");
   authorization.searchParams.set("state", state);
   redirect(
     res,
@@ -501,7 +501,11 @@ async function handleOAuthCallback(req, res, url) {
   if (url.searchParams.has("error")) {
     const error = url.searchParams.get("error");
     console.warn("Discord OAuth authorization returned:", error);
-    redirect(res, error === "access_denied" ? "/?e=denied" : "/?e=discord", clearState);
+    redirect(
+      res,
+      error === "access_denied" ? "/?e=denied" : error === "invalid_scope" ? "/?e=scope" : "/?e=discord",
+      clearState,
+    );
     return;
   }
   const code = url.searchParams.get("code");

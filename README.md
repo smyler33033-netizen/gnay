@@ -4,7 +4,7 @@ Este projeto usa um servidor local para login pelo Discord e para salvar perfis 
 
 ## Configurar o login Discord
 
-1. No Discord Developer Portal, crie uma aplicação e abra **OAuth2**. O login solicita `identify` e `identify.premium`; a segunda permissão permite mostrar a insígnia Nitro conforme o status retornado pelo Discord.
+1. No Discord Developer Portal, crie uma aplicação e abra **OAuth2**. O login solicita apenas o escopo `identify`. O escopo `identify.premium` é restrito a aplicações aprovadas pelo Discord e não é necessário para entrar.
 2. Adicione este Redirect URI, exatamente como está:
    `http://localhost:8765/auth/discord/callback`
 3. Copie `.env.example` para `.env` e preencha Client ID e Client Secret. O arquivo fica local e é ignorado pelo Git:
@@ -57,7 +57,7 @@ Integrações como pagamentos, MFA e recursos administrativos continuam dependen
 
 ## Cartão e atividades do Discord
 
-O perfil usa o ID da conta autenticada para exibir o cartão do Discord. Para exibir presença e atividades ao vivo, a conta também precisa entrar no [servidor Lanyard](https://discord.gg/lanyard) e permitir que ele compartilhe a presença. O servidor local consulta a API pública do Lanyard; se a conta não estiver sendo monitorada, o perfil informa como ativar o recurso. A decoração do avatar e o tipo de assinatura Nitro são atualizados ao entrar pelo Discord. O status Nitro é carregado no próximo login, quando a conta autoriza o escopo `identify.premium`. O Discord não fornece um status global de Boost: essa insígnia depende de um servidor específico e não é exibida automaticamente neste site.
+O perfil usa o ID da conta autenticada para exibir o cartão do Discord. Para exibir presença e atividades ao vivo, a conta também precisa entrar no [servidor Lanyard](https://discord.gg/lanyard) e permitir que ele compartilhe a presença. O servidor local consulta a API pública do Lanyard; se a conta não estiver sendo monitorada, o perfil informa como ativar o recurso. A decoração do avatar é atualizada ao entrar pelo Discord. O escopo `identify.premium`, necessário para ler o tipo de assinatura Nitro via OAuth, está restrito pelo Discord a aplicações aprovadas e não é solicitado pelo Gnay. O Discord não fornece um status global de Boost: essa insígnia depende de um servidor específico e não é exibida automaticamente neste site.
 
 ## Templates pessoais do perfil
 
