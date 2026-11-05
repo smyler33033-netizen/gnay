@@ -6,7 +6,11 @@ const http = require("node:http");
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, "data");
 const UPLOAD_DIR = path.join(ROOT, "uploads");
+const UPLOAD_PART_DIR = path.join(UPLOAD_DIR, ".parts");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
+const UPLOAD_CHUNK_SIZE = 512 * 1024;
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024;
+const MAX_UPLOAD_PARTS = Math.ceil(MAX_UPLOAD_SIZE / UPLOAD_CHUNK_SIZE);
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 const OAUTH_TTL = 10 * 60 * 1000;
 const COOKIE_NAME = "gnay_session";
@@ -23,6 +27,7 @@ const RESERVED_SLUGS = new Set([
   "layout",
   "links",
   "login",
+  "logimcomgnay",
   "logincomshooting",
   "modelo",
   "modelos",
@@ -52,8 +57,11 @@ const mimeTypes = {
   ".m4a": "audio/mp4",
   ".mp3": "audio/mpeg",
   ".mp4": "video/mp4",
+  ".m4v": "video/mp4",
+  ".mov": "video/quicktime",
   ".ogg": "audio/ogg",
   ".oga": "audio/ogg",
+  ".ogv": "video/ogg",
   ".opus": "audio/ogg",
   ".png": "image/png",
   ".svg": "image/svg+xml",
@@ -79,6 +87,10 @@ const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number(process.env.PORT || 8765);
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(UPLOAD_PART_DIR, { recursive: true });
+for (const name of fs.readdirSync(UPLOAD_PART_DIR)) {
+  if (/^[a-f0-9]{32}\.part$/i.test(name)) fs.rmSync(path.join(UPLOAD_PART_DIR, name), { force: true });
+}
 
 function readStore() {
   try {
@@ -234,7 +246,7 @@ function slugBase(value) {
     .replace(/[^a-z0-9_-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 20);
-  return slug.length >= 3 ? slug : "";
+  return slug.length >= 2 ? slug : "";
 }
 
 function makeSlug(preferred, discordUser) {
@@ -252,11 +264,16 @@ function publicUser(user) {
   return Object.assign(safeUser, { dcId: discordId });
 }
 
-async function saveUpload(body, mime) {
+function uploadExtension(mime) {
   const extension = Object.entries(mimeTypes).find(([, value]) => value === mime)?.[0];
-  if (!extension || !/^(image\/|audio\/)/.test(mime)) {
+  if (!extension || !/^(image\/|audio\/|video\/)/.test(mime)) {
     throw Object.assign(new Error("Formato de arquivo não aceito."), { status: 415 });
   }
+  return extension;
+}
+
+async function saveUpload(body, mime) {
+  const extension = uploadExtension(mime);
   if (!body.length) throw Object.assign(new Error("Arquivo vazio."), { status: 400 });
   const filename = crypto.randomUUID() + extension;
   await fs.promises.writeFile(path.join(UPLOAD_DIR, filename), body, { flag: "wx" });
@@ -383,7 +400,7 @@ async function handleOAuthCallback(req, res, url) {
 
 async function handleApi(req, res, url) {
   const { pathname } = url;
-  const viewMatch = pathname.match(/^\/api\/view\/([a-z0-9_-]{3,20})$/);
+  const viewMatch = pathname.match(/^\/api\/view\/([a-z0-9_-]{2,20})$/);
   if (req.method === "POST" && viewMatch) {
     if (!checkOrigin(req, res)) return;
     const slug = viewMatch[1];
@@ -414,7 +431,7 @@ async function handleApi(req, res, url) {
     return;
   }
 
-  const clickMatch = pathname.match(/^\/api\/click\/([a-z0-9_-]{3,20})$/);
+  const clickMatch = pathname.match(/^\/api\/click\/([a-z0-9_-]{2,20})$/);
   if (req.method === "POST" && clickMatch) {
     if (!checkOrigin(req, res)) return;
     const slug = clickMatch[1];
@@ -527,7 +544,7 @@ async function handleApi(req, res, url) {
     if (!checkOrigin(req, res)) return;
     const body = await readJson(req, 16 * 1024);
     const slug = typeof body.slug === "string" ? body.slug : "";
-    if (!/^[a-z0-9_-]{3,20}$/.test(slug) || RESERVED_SLUGS.has(slug)) {
+    if (!/^[a-z0-9_-]{2,20}$/.test(slug) || RESERVED_SLUGS.has(slug)) {
       sendJson(res, 400, { error: "Nome de usuário inválido ou reservado." });
       return;
     }
@@ -592,13 +609,28 @@ async function handleApi(req, res, url) {
     const id = url.searchParams.get("id") || "";
     const index = Number(url.searchParams.get("i"));
     const count = Number(url.searchParams.get("n"));
-    if (!/^[a-f0-9]{32}$/i.test(id) || !Number.isInteger(index) || !Number.isInteger(count) || count < 1 || count > 50 || index < 0 || index >= count) {
+    if (
+      !/^[a-f0-9]{32}$/i.test(id) ||
+      !Number.isInteger(index) ||
+      !Number.isInteger(count) ||
+      count < 1 ||
+      count > MAX_UPLOAD_PARTS ||
+      index < 0 ||
+      index >= count
+    ) {
       sendJson(res, 400, { error: "Parte de upload inválida." });
       return;
     }
     const now = Date.now();
     for (const [key, upload] of uploadParts) {
-      if (now - upload.updated > 30 * 60 * 1000) uploadParts.delete(key);
+      if (now - upload.updated > 30 * 60 * 1000) {
+        uploadParts.delete(key);
+        try {
+          await fs.promises.unlink(upload.path);
+        } catch (error) {
+          if (error.code !== "ENOENT") throw error;
+        }
+      }
     }
     let upload = uploadParts.get(id);
     if (!upload) {
@@ -607,15 +639,46 @@ async function handleApi(req, res, url) {
         sendJson(res, 429, { error: "Muitos uploads em andamento." });
         return;
       }
-      upload = { slug: session.user.slug, count, chunks: new Array(count), updated: now };
+      const uploadPath = path.join(UPLOAD_PART_DIR, id + ".part");
+      const handle = await fs.promises.open(uploadPath, "wx");
+      await handle.close();
+      upload = { slug: session.user.slug, count, path: uploadPath, received: new Map(), totalBytes: 0, updated: now };
       uploadParts.set(id, upload);
     }
     if (upload.slug !== session.user.slug || upload.count !== count) {
       sendJson(res, 400, { error: "Upload inválido." });
       return;
     }
-    const chunk = await readBody(req, 512 * 1024);
-    upload.chunks[index] = chunk;
+    const chunk = await readBody(req, UPLOAD_CHUNK_SIZE);
+    if (!chunk.length || (index < count - 1 && chunk.length !== UPLOAD_CHUNK_SIZE)) {
+      sendJson(res, 400, { error: "Tamanho da parte de upload inválido." });
+      return;
+    }
+    const oldLength = upload.received.get(index);
+    if (oldLength !== undefined && oldLength !== chunk.length) {
+      sendJson(res, 400, { error: "Parte reenviada com tamanho diferente." });
+      return;
+    }
+    if (oldLength === undefined && upload.totalBytes + chunk.length > MAX_UPLOAD_SIZE) {
+      sendJson(res, 413, { error: "Arquivo maior que 1 GB." });
+      return;
+    }
+    const handle = await fs.promises.open(upload.path, "r+");
+    try {
+      let written = 0;
+      const position = index * UPLOAD_CHUNK_SIZE;
+      while (written < chunk.length) {
+        const result = await handle.write(chunk, written, chunk.length - written, position + written);
+        if (!result.bytesWritten) throw new Error("Falha ao gravar parte do upload.");
+        written += result.bytesWritten;
+      }
+    } finally {
+      await handle.close();
+    }
+    if (oldLength === undefined) {
+      upload.received.set(index, chunk.length);
+      upload.totalBytes += chunk.length;
+    }
     upload.updated = now;
     sendJson(res, 200, { ok: true });
     return;
@@ -629,19 +692,30 @@ async function handleApi(req, res, url) {
       !upload ||
       upload.slug !== session.user.slug ||
       upload.count !== body.n ||
-      upload.chunks.some((chunk) => !chunk)
+      upload.received.size !== upload.count
     ) {
       sendJson(res, 400, { error: "Upload incompleto ou expirado." });
       return;
     }
-    const bytes = Buffer.concat(upload.chunks);
-    if (bytes.length > 25 * 1024 * 1024) {
+    const lastChunkSize = upload.received.get(upload.count - 1);
+    const totalBytes = (upload.count - 1) * UPLOAD_CHUNK_SIZE + lastChunkSize;
+    if (
+      !Number.isInteger(lastChunkSize) ||
+      lastChunkSize < 1 ||
+      lastChunkSize > UPLOAD_CHUNK_SIZE ||
+      totalBytes !== upload.totalBytes ||
+      totalBytes > MAX_UPLOAD_SIZE
+    ) {
       uploadParts.delete(body.id);
-      sendJson(res, 413, { error: "Arquivo maior que 25 MB." });
+      await fs.promises.unlink(upload.path);
+      sendJson(res, 413, { error: "Arquivo maior que 1 GB." });
       return;
     }
+    const extension = uploadExtension(String(body.mime || "").toLowerCase());
+    const filename = crypto.randomUUID() + extension;
+    await fs.promises.rename(upload.path, path.join(UPLOAD_DIR, filename));
     uploadParts.delete(body.id);
-    sendJson(res, 200, { url: await saveUpload(bytes, String(body.mime || "").toLowerCase()) });
+    sendJson(res, 200, { url: "/uploads/" + filename });
     return;
   }
 
@@ -702,12 +776,38 @@ async function serveStatic(req, res, pathname) {
   try {
     const stat = await fs.promises.stat(file);
     if (!stat.isFile()) throw Object.assign(new Error("Not a file"), { code: "ENOENT" });
-    res.writeHead(200, {
+    const headers = {
       "cache-control": file.endsWith("index.html") ? "no-cache" : "public, max-age=3600",
       "content-length": stat.size,
       "content-type": mimeTypes[path.extname(file).toLowerCase()] || "application/octet-stream",
       "x-content-type-options": "nosniff",
-    });
+    };
+    const range = req.headers.range;
+    if (isAllowedUpload && range) {
+      const match = range.match(/^bytes=(\d*)-(\d*)$/);
+      if (!match || (!match[1] && !match[2])) {
+        res.writeHead(416, { "content-range": "bytes */" + stat.size });
+        res.end();
+        return;
+      }
+      let start = match[1] ? Number(match[1]) : Math.max(0, stat.size - Number(match[2]));
+      let end = match[2] && match[1] ? Number(match[2]) : stat.size - 1;
+      if (!match[1] && match[2]) end = stat.size - 1;
+      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || start >= stat.size) {
+        res.writeHead(416, { "content-range": "bytes */" + stat.size });
+        res.end();
+        return;
+      }
+      end = Math.min(end, stat.size - 1);
+      headers["accept-ranges"] = "bytes";
+      headers["content-range"] = "bytes " + start + "-" + end + "/" + stat.size;
+      headers["content-length"] = end - start + 1;
+      res.writeHead(206, headers);
+      fs.createReadStream(file, { start, end }).pipe(res);
+      return;
+    }
+    if (isAllowedUpload) headers["accept-ranges"] = "bytes";
+    res.writeHead(200, headers);
     fs.createReadStream(file).pipe(res);
   } catch (error) {
     if (error.code === "ENOENT") {

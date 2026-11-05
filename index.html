@@ -192,6 +192,7 @@
             .toLowerCase();
           var R = [
             "customizacao",
+            "logimcomgnay",
             "logincomshooting",
             "perfil",
             "layout",
@@ -215,7 +216,7 @@
             "staff",
             "shooting",
           ];
-          if (/^[a-z0-9_-]{3,20}$/.test(p) && R.indexOf(p) < 0) document.documentElement.className += " bp";
+          if (/^[a-z0-9_-]{2,20}$/.test(p) && R.indexOf(p) < 0) document.documentElement.className += " bp";
         } catch (e) {}
       })();
     </script>
@@ -1405,6 +1406,32 @@
       .ro.tx {
         color: var(--tx);
       }
+      .choice-row {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(135deg, #121212, #0b0b0b);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025), 0 8px 24px rgba(0, 0, 0, 0.16);
+        transition:
+          border-color 0.18s ease,
+          background 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+      .choice-row:hover {
+        border-color: rgba(190, 160, 255, 0.3);
+        background: linear-gradient(135deg, #17151c, #0d0d0f);
+      }
+      .choice-row:focus-within {
+        border-color: rgba(190, 160, 255, 0.62);
+        box-shadow: 0 0 0 3px rgba(160, 120, 255, 0.12), 0 8px 24px rgba(0, 0, 0, 0.2);
+      }
+      .choice-row select {
+        min-width: 0;
+        cursor: pointer;
+        font-weight: 500 !important;
+      }
+      .choice-row select option {
+        background: #171717;
+        color: #fff;
+      }
       .ro .sw {
         width: 40px;
         height: 40px;
@@ -1435,6 +1462,30 @@
         font-size: 22px;
         padding: 30px;
       }
+      .audio-source {
+        display: block;
+        min-height: 0;
+        padding: 12px 16px 16px;
+        text-align: center;
+        cursor: default;
+      }
+      .audio-source-pick {
+        display: block;
+        padding: 10px 0 14px;
+        cursor: pointer;
+        font-size: 18px;
+      }
+      .audio-source .url {
+        height: 58px;
+        gap: 8px;
+        margin: 0;
+        border-radius: 16px;
+        padding: 0 12px;
+        font-size: 16px;
+      }
+      .audio-source .url input {
+        font-size: 15px;
+      }
       .up i {
         display: grid;
         place-items: center;
@@ -1453,6 +1504,11 @@
         border-radius: 14px;
         border: 1px solid #222;
         overflow: hidden;
+      }
+      .img > video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
       .img > span {
         position: absolute;
@@ -2224,10 +2280,10 @@
       }
       .pfp {
         position: fixed;
-        bottom: calc(var(--safe-b) + 16px);
+        top: calc(var(--safe-t) + 14px);
         left: 50%;
         transform: translateX(-50%);
-        width: min(560px, 94vw);
+        width: min(920px, calc(100vw - 28px));
         z-index: 6;
         color: #fff;
         flex: none;
@@ -3418,6 +3474,35 @@
         align-items: center;
         gap: 2px;
       }
+      .pf-volume {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 6px;
+        padding-left: 8px;
+        border-left: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .pfp .pf-volume .pfb {
+        width: 36px;
+        height: 40px;
+      }
+      .pfp .pf-volume input[type="range"] {
+        width: 76px;
+        flex: none;
+        accent-color: #fff;
+      }
+      .pf-volume-standalone {
+        padding: 4px 8px;
+        border: 0;
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.55);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+      }
+      .pf-volume-standalone input[type="range"] {
+        width: 84px;
+        accent-color: #fff;
+      }
       .pfp .ctl .pfb {
         box-sizing: border-box;
         width: 40px;
@@ -3444,6 +3529,40 @@
       }
       .pfp .ctl .pfb:nth-child(2) .ms {
         font-size: 28px !important;
+      }
+      @media (max-width: 560px) {
+        .pfp {
+          width: calc(100vw - 20px);
+          padding: 8px;
+          gap: 6px;
+        }
+        .pfp .cv {
+          width: 38px;
+          height: 38px;
+        }
+        .pfp .ctl {
+          gap: 0;
+        }
+        .pfp .ctl .pfb {
+          width: 30px;
+          height: 34px;
+        }
+        .pfp .ctl .pfb:nth-child(2) {
+          width: 36px;
+          height: 36px;
+        }
+        .pfp .pf-volume {
+          gap: 2px;
+          margin-left: 2px;
+          padding-left: 4px;
+        }
+        .pfp .pf-volume .pfb {
+          width: 30px;
+          height: 34px;
+        }
+        .pfp .pf-volume input[type="range"] {
+          width: 52px;
+        }
       }
 
       .dcx .dca img.ddc {
@@ -6532,22 +6651,31 @@
           </p>
           <div class="stats">
             <div class="stat rv in">
-              <div><b>0</b><span>Visualizações do perfil</span></div>
+              <div><b>—</b><span>Visualizações do perfil</span></div>
               <span class="ms" style="font-size: 36px" aria-hidden="true">visibility</span>
             </div>
             <div class="stat rv in">
-              <div><b>0</b><span>Usuários</span></div>
+              <div><b>—</b><span>Usuários</span></div>
               <span class="ms" style="font-size: 36px" aria-hidden="true">person</span>
             </div>
             <div class="stat rv in">
-              <div><b>0</b><span>Uploads de arquivos</span></div>
+              <div><b>—</b><span>Uploads de arquivos</span></div>
               <span class="ms" style="font-size: 36px" aria-hidden="true">description</span>
             </div>
             <div class="stat rv in">
-              <div><b>0</b><span>Assinantes</span></div>
+              <div><b>—</b><span>Assinantes</span></div>
               <span class="ms" style="font-size: 36px" aria-hidden="true">diamond</span>
             </div>
           </div>
+          <p
+            id="statsStatus"
+            role="status"
+            aria-live="polite"
+            hidden
+            style="text-align: center; font-size: 14px; margin: 10px 0 0"
+          >
+            Não foi possível carregar as estatísticas. Tente novamente mais tarde.
+          </p>
           <p style="text-align: center; font-size: 26px; margin-top: 70px; font-weight: 300">
             Garanta seu perfil e crie sua conta em minutos!
           </p>
@@ -7059,8 +7187,10 @@
     <div class="sheet" id="aud">
       <div>
         <button class="x" id="audX" aria-label="Fechar"><span class="ms" style="font-size: 26px">close</span></button>
-        <h3>Gerenciador de áudio</h3>
-        <p style="font-size: 21px; margin: 0 0 16px">Para ativar um áudio, selecione-o clicando.</p>
+        <h3>Gerenciador de música e áudio</h3>
+        <p style="font-size: 21px; margin: 0 0 16px">
+          Adicione um arquivo seu ou um link do Spotify/YouTube. Para ativar uma música, selecione-a clicando.
+        </p>
         <a class="prm" href="#" data-buy="premium" style="font-size: 23px; padding: 26px 14px; margin: 0 0 22px"
           >Premium grátis temporariamente: adicione até 4 áudios</a
         >
@@ -7077,16 +7207,17 @@
           ><input type="checkbox" id="audPl"
         /></label>
         <button class="fb c" id="audAdd" style="min-height: 76px">
-          <span class="ms" style="font-size: 28px; color: #fff">music_note</span>Adicionar áudio
+          <span class="ms" style="font-size: 28px; color: #fff">music_note</span>Adicionar música/áudio
         </button>
       </div>
     </div>
     <div class="sheet" id="aud2">
       <div>
         <button class="x" id="aud2X" aria-label="Fechar"><span class="ms" style="font-size: 26px">close</span></button>
-        <h3 id="naH">Adicionar um áudio</h3>
-        <label class="up" style="min-height: 130px; cursor: pointer; margin-bottom: 14px"
-          ><input
+        <h3 id="naH">Adicionar uma música</h3>
+        <div class="up audio-source" style="margin-bottom: 14px">
+          <label class="audio-source-pick"
+            ><input
             type="file"
             id="naFile"
             accept="audio/*,video/mp4,.mp3,.ogg,.oga,.opus,.wav,.m4a,.aac,.flac,.weba,.mp4"
@@ -7094,9 +7225,17 @@
           />
           <div>
             <span class="ms" style="font-size: 44px; display: block; margin: 0 auto 8px; color: #fff">music_note</span
-            ><span id="naF">Clique para enviar um áudio</span>
-          </div></label
-        >
+            ><span id="naF">Clique para enviar um arquivo de áudio</span>
+          </div></label>
+          <label for="naUrl" style="display: block; font-size: 16px; margin: 0 0 8px">Link do Spotify ou YouTube</label>
+          <div class="url">
+            <span class="ms" style="font-size: 24px; color: #999">link</span>
+            <input id="naUrl" type="url" placeholder="Cole o link da música ou vídeo" />
+          </div>
+          <p class="mu" style="font-size: 14px; margin: 8px 0 0">
+            Envie um arquivo ou cole um link; ele toca no player oficial.
+          </p>
+        </div>
         <label class="up" style="min-height: 130px; cursor: pointer; margin-bottom: 18px"
           ><input type="file" id="naCov" accept="image/*" hidden="" />
           <div>
@@ -7565,6 +7704,9 @@
         <div class="box" style="padding: 36px 30px">
           <div class="fl" data-m="bg">
             <label>Plano de fundo</label>
+            <small style="display: block; margin: -20px 0 16px; color: var(--mu)">
+              Imagens, GIFs e vídeos MP4, WEBM, MOV ou OGV — até 1 GB.
+            </small>
             <div class="up"></div>
           </div>
           <div class="fl" data-m="audio">
@@ -7610,8 +7752,8 @@
             </div>
           </div>
           <div class="fl">
-            <label>Efeitos de fundo</label>
-            <div class="ro tx">
+            <label>✨ Efeitos de fundo</label>
+            <div class="ro tx choice-row">
               <span class="ms" style="font-size: 34px; color: #888">auto_awesome</span
               ><select
                 id="pfFx"
@@ -7627,16 +7769,16 @@
                   appearance: none;
                 "
               >
-                <option value="">Nenhum</option>
-                <option value="chuva">Chuva</option>
-                <option value="neve">Neve</option>
-                <option value="estrelas">Estrelas</option></select
+                <option value="">✨ Nenhum</option>
+                <option value="chuva">🌧️ Chuva</option>
+                <option value="neve">❄️ Neve</option>
+                <option value="estrelas">🌟 Estrelas</option></select
               ><span class="ms e" style="font-size: 26px">unfold_more</span>
             </div>
           </div>
           <div class="fl">
-            <label>Alinhamento dos ícones sociais</label>
-            <div class="ro tx">
+            <label>🎯 Alinhamento dos ícones sociais</label>
+            <div class="ro tx choice-row">
               <span class="ms" style="font-size: 34px; color: #888">format_align_left</span
               ><select
                 id="pfSa"
@@ -7652,10 +7794,10 @@
                   appearance: none;
                 "
               >
-                <option value="">Padrão do layout</option>
-                <option value="esq">Esquerda</option>
-                <option value="cen">Centro</option>
-                <option value="dir">Direita</option></select
+                <option value="">⚙️ Padrão do layout</option>
+                <option value="esq">⬅️ Esquerda</option>
+                <option value="cen">↔️ Centro</option>
+                <option value="dir">➡️ Direita</option></select
               ><span class="ms e" style="font-size: 26px">unfold_more</span>
             </div>
           </div>
@@ -8879,7 +9021,7 @@
         document.documentElement.classList.remove("bp");
         const h = getH();
         if (!h || h === "home") homeStats();
-        if (S && (h === "painel" || h === "logincomshooting")) {
+        if (S && (h === "painel" || h === "logimcomgnay")) {
           let nx = 0;
           try {
             const v = JSON.parse(localStorage.getItem("md_next") || "null");
@@ -8896,7 +9038,7 @@
             localStorage.setItem("md_next", JSON.stringify({ id: MDLINK, t: Date.now() }));
           } catch (e) {}
         }
-        if (h === "logincomshooting" && S) {
+        if (h === "logimcomgnay" && S) {
           navTo("painel", 1);
           return;
         }
@@ -8929,7 +9071,7 @@
           setTimeout(() => toast("Customização: em breve."), 80);
           return;
         }
-        const prof = h && !KN.includes(h) && /^[a-z0-9_-]{3,20}$/.test(h) && !RES.has(h);
+        const prof = h && !KN.includes(h) && /^[a-z0-9_-]{2,20}$/.test(h) && !RES.has(h);
         const dash = h === "painel",
           st = h === "estatisticas",
           lk = h === "links",
@@ -8942,7 +9084,7 @@
           pf = h === "perfil",
           ly = h === "layout",
           cz = h === "customizacao",
-          lg = h === "logincomshooting";
+          lg = h === "logimcomgnay";
         $("#v-home").classList.toggle(
           "on",
           !dash && !st && !lk && !pz && !bd && !md && !cf && !tp && !pr && !pf && !ly && !cz && !lg && !prof,
@@ -9260,6 +9402,7 @@
         tt = setTimeout(() => e.classList.remove("on"), 2600);
       }
       const UP_CHUNK = 512 * 1024;
+      const UP_MAX = 1024 * 1024 * 1024;
       const upRid = () => {
         const a = new Uint8Array(16);
         (window.crypto || window.msCrypto).getRandomValues(a);
@@ -9288,9 +9431,10 @@
       }
       const upNet = (e) =>
         !e.status || e.status === 413 || e.status === 502 || e.status === 503 || e.status === 504 || e.status === 408;
-      async function upParts(blob, mime, done, extra) {
+      async function upParts(blob, mime, done, extra, onProgress) {
         const id = upRid(),
           n = Math.max(1, Math.ceil(blob.size / UP_CHUNK));
+        let lastProgress = -1;
         for (let i = 0; i < n; i++) {
           const part = blob.slice(i * UP_CHUNK, (i + 1) * UP_CHUNK);
           let ok = false,
@@ -9306,6 +9450,13 @@
             }
           }
           if (!ok) throw last;
+          if (onProgress) {
+            const progress = Math.floor(Math.min(blob.size, (i + 1) * UP_CHUNK) / blob.size * 100);
+            if (progress !== lastProgress) {
+              lastProgress = progress;
+              onProgress(progress);
+            }
+          }
         }
         return upPost(
           done,
@@ -9314,7 +9465,7 @@
         );
       }
       /* envia um arquivo: pedido único se for pequeno; em partes de 512 KB se for grande ou se a hospedagem recusar o corpo (erro 413) */
-      async function upl(blob, mime) {
+      async function upl(blob, mime, onProgress) {
         if (blob.size <= UP_CHUNK) {
           try {
             const j = await upPost("/api/upload", blob, mime);
@@ -9323,7 +9474,7 @@
             if (!upNet(e)) throw e;
           }
         }
-        const j = await upParts(blob, mime, "/api/upload/done");
+        const j = await upParts(blob, mime, "/api/upload/done", null, onProgress);
         if (!j.url) {
           const e = new Error("up");
           e.status = 0;
@@ -9334,6 +9485,8 @@
       function upMsg(er, what) {
         what = what || "o arquivo";
         const c = er && er.status;
+        const detail = er && er.data && typeof er.data.error === "string" ? er.data.error : "";
+        if (c === 400 && detail) return "O servidor recusou o upload: " + detail;
         return c === 401
           ? "Sua sessão expirou. Entre novamente."
           : c === 415
@@ -9341,7 +9494,7 @@
             : c === 429
               ? "Muitas tentativas. Aguarde um pouco."
               : c === 413
-                ? "Arquivo grande demais para o servidor (erro 413)."
+                ? (detail || "Arquivo grande demais para o servidor (erro 413).")
                 : "Não foi possível enviar " + what + " (erro " + (c || "de conexão") + ").";
       }
       const IMG_EXT = {
@@ -9382,13 +9535,12 @@
       };
       const isGif = (f) => imgMime(f) === "image/gif" || /\.gif$/i.test(f.name || "");
       const mediaMime = (f) => imgMime(f) || vidMime(f);
-      /* GIF vai inteiro para o servidor (mantém a animação); devolve a URL /u/... */
-      const GIF_MAX = 12 * 1048576;
+      const GIF_MAX = UP_MAX;
       const IMG_MAX = { bg: 1920, avatar: 512, cursor: 32 };
       function shrink(f, key, cb) {
         if (key !== "cursor" && isGif(f)) {
           if (f.size > GIF_MAX) {
-            toast("GIF muito grande (máx. 12 MB).");
+            toast("GIF muito grande (máx. 1 GB).");
             cb(null, 1);
             return;
           }
@@ -9431,9 +9583,26 @@
         if (url) {
           el = document.createElement("div");
           el.className = "img";
-          el.style.background = 'center/cover url("' + url + '")';
-          el.innerHTML = '<span>.IMG</span><b><span class="ms" style="font-size:26px">close</span></b>';
-          el.querySelector("b").onclick = () => {
+          const isVideo = key === "bg" && /\.(mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i.test(url);
+          if (isVideo) {
+            const video = document.createElement("video");
+            video.src = url;
+            video.muted = true;
+            video.loop = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.setAttribute("aria-label", "Prévia do vídeo de fundo");
+            el.appendChild(video);
+          } else {
+            el.style.background = 'center/cover url("' + url + '")';
+          }
+          const name = document.createElement("span");
+          name.textContent = isVideo ? "VÍDEO" : ".IMG";
+          el.appendChild(name);
+          const remove = document.createElement("b");
+          remove.innerHTML = '<span class="ms" style="font-size:26px">close</span>';
+          el.appendChild(remove);
+          remove.onclick = () => {
             delete P[key];
             saveP();
             media(fl);
@@ -9445,18 +9614,38 @@
           el = document.createElement("label");
           el.className = "up";
           el.style.cursor = "pointer";
+          const accept =
+            key === "bg"
+              ? "image/*,video/mp4,video/webm,video/quicktime,video/ogg,.gif,.webp,.avif,.heic,.heif,.bmp,.svg,.mp4,.webm,.mov,.m4v,.ogv"
+              : "image/*,image/gif,image/webp,image/avif,image/heic,image/heif,image/bmp,image/svg+xml,.gif,.webp,.avif,.heic,.heif,.bmp,.svg";
           el.innerHTML =
-            '<input type="file" accept="image/*,image/gif,image/webp,image/avif,image/heic,image/heif,image/bmp,image/svg+xml,.gif,.webp,.avif,.heic,.heif,.bmp,.svg" hidden><div><i><span class="ms" style="font-size:30px">image</span></i>Clique para enviar um arquivo</div>';
+            '<input type="file" accept="' +
+            accept +
+            '" hidden><div><i><span class="ms" style="font-size:30px">image</span></i>Clique para enviar um arquivo</div>';
           el.querySelector("input").onchange = (e) => {
             const f = e.target.files[0];
             e.target.value = "";
             if (!f) return;
-            if (!imgMime(f)) {
-              toast("Envie uma imagem (PNG, JPG, WEBP, GIF, AVIF, HEIC, BMP, SVG…).");
+            const imageType = imgMime(f);
+            const videoType = key === "bg" ? vidMime(f) : "";
+            if (!imageType && !videoType) {
+              toast(key === "bg" ? "Envie uma imagem ou vídeo (MP4, WEBM, MOV ou OGV)." : "Envie uma imagem.");
               return;
             }
-            if (f.size > 12e6) {
-              toast("Imagem muito grande (máx. 12 MB).");
+            if (f.size > UP_MAX) {
+              toast("Arquivo muito grande (máx. 1 GB).");
+              return;
+            }
+            if (videoType) {
+              toast("Enviando…");
+              upl(f, videoType, (progress) => toast("Enviando " + progress + "%…"))
+                .then((u) => {
+                  P[key] = u;
+                  saveP();
+                  media(fl, u);
+                  toast("Vídeo salvo.");
+                })
+                .catch((er) => toast(upMsg(er, "o vídeo")));
               return;
             }
             toast("Enviando…");
@@ -9465,7 +9654,7 @@
                 if (!silent) toast("Não foi possível ler a imagem.");
                 return;
               }
-              upl(res.blob, res.mime)
+              upl(res.blob, res.mime, (progress) => toast("Enviando " + progress + "%…"))
                 .then((u) => {
                   P[key] = u;
                   saveP();
@@ -9481,6 +9670,7 @@
 
       const KN = [
         "customizacao",
+        "logimcomgnay",
         "logincomshooting",
         "perfil",
         "layout",
@@ -9527,7 +9717,7 @@
         S = null,
         K = [];
       let UC = 0;
-      const valid = (u) => /^[a-z0-9_-]{3,20}$/.test(u);
+      const valid = (u) => /^[a-z0-9_-]{2,20}$/.test(u);
       /* ===== Login somente com Discord: o servidor faz o OAuth (code flow) e cria a sessão ===== */
       let PRE = "";
       async function api(m, u, b, options = {}) {
@@ -9566,7 +9756,7 @@
           .replace(/^\/+|\/+$/g, "")
           .replace(/^@/, "")
           .toLowerCase();
-        if (!p) p = location.hash.slice(1).toLowerCase();
+        if (location.protocol === "file:" || !p) p = location.hash.slice(1).toLowerCase();
         else if (p === "painel") {
           const legacyProfile = location.hash.slice(1).toLowerCase();
           if (valid(legacyProfile) && !RES.has(legacyProfile)) p = legacyProfile;
@@ -9577,10 +9767,14 @@
         const bm = p.match(/^badges\/(discord|site)$/);
         BDSUB = bm ? bm[1] : "";
         if (bm) p = "badges";
-        return p === "login" ? "logincomshooting" : p;
+        return p === "login" || p === "logincomshooting" ? "logimcomgnay" : p;
       }
       function navTo(x, rep) {
-        if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+        if (
+          location.protocol === "file:" ||
+          location.hostname === "localhost" ||
+          location.hostname === "127.0.0.1"
+        ) {
           const target = location.pathname + (x ? "#" + x : "");
           if (target !== location.pathname + location.hash || location.search) {
             history[rep ? "replaceState" : "pushState"](null, "", target);
@@ -9600,7 +9794,7 @@
         const p = (pre || "").trim().toLowerCase();
         PRE = valid(p) ? p : "";
         $("#auErr").textContent = "";
-        navTo("logincomshooting");
+        navTo("logimcomgnay");
       }
       function claim(f) {
         const v = f.querySelector("input").value.trim().toLowerCase();
@@ -9799,16 +9993,35 @@
         } catch (e) {}
       }
       const nf = (n) => Number(n || 0).toLocaleString("pt-BR");
+      let homeStatsRequest = 0;
       async function homeStats() {
+        const request = ++homeStatsRequest;
+        const isCurrent = () => request === homeStatsRequest && (!getH() || getH() === "home");
+        const status = $("#statsStatus");
         try {
-          const r = await fetch("/api/stats");
-          if (!r.ok) return;
+          const r = await fetch("/api/stats", { cache: "no-store" });
+          if (!r.ok) throw new Error("A API respondeu com HTTP " + r.status + ".");
           const s = await r.json();
           const v = [s.views, s.users, s.uploads, s.subs];
+          if (!v.every((n) => Number.isSafeInteger(n) && n >= 0)) {
+            throw new Error("A API retornou estatísticas inválidas.");
+          }
+          if (!isCurrent()) return;
           $$(".stats .stat b").forEach((e, i) => {
-            if (v[i] !== undefined) e.textContent = nf(v[i]);
+            e.textContent = nf(v[i]);
           });
-        } catch (e) {}
+          if (status) status.hidden = true;
+        } catch (e) {
+          if (!isCurrent()) return;
+          $$(".stats .stat b").forEach((el) => {
+            el.textContent = "—";
+          });
+          if (status) {
+            status.textContent = "Não foi possível carregar as estatísticas. Tente novamente mais tarde.";
+            status.hidden = false;
+          }
+          console.error("Falha ao carregar as estatísticas públicas da gnay:", e);
+        }
       }
       async function boot() {
         const h0 = getH(),
@@ -10226,7 +10439,7 @@
         const k = lkImgI;
         if (isGif(f)) {
           if (f.size > GIF_MAX) {
-            toast("GIF muito grande (máx. 12 MB).");
+            toast("GIF muito grande (máx. 1 GB).");
             return;
           }
           toast("Enviando…");
@@ -10701,6 +10914,65 @@
         d = Math.round(d || 0);
         return Math.floor(d / 60) + ":" + String(d % 60).padStart(2, "0");
       };
+      function parseAudioLink(value) {
+        try {
+          const url = new URL(String(value || "").trim());
+          if (url.protocol !== "https:" || url.username || url.password || url.port) return null;
+          const host = url.hostname.toLowerCase();
+          if (
+            [
+              "youtube.com",
+              "www.youtube.com",
+              "m.youtube.com",
+              "music.youtube.com",
+              "youtu.be",
+              "www.youtu.be",
+              "youtube-nocookie.com",
+              "www.youtube-nocookie.com",
+            ].includes(host)
+          ) {
+            const parts = url.pathname.split("/").filter(Boolean);
+            const id =
+              host.endsWith("youtu.be")
+                ? parts[0]
+                : url.searchParams.get("v") || (["embed", "shorts", "live"].includes(parts[0]) ? parts[1] : "");
+            if (!/^[A-Za-z0-9_-]{11}$/.test(id || "")) return null;
+            return {
+              provider: "youtube",
+              url: "https://www.youtube.com/watch?v=" + id,
+              embed: "https://www.youtube-nocookie.com/embed/" + id + "?rel=0",
+            };
+          }
+          if (host === "open.spotify.com" || host === "www.open.spotify.com") {
+            const match = url.pathname.match(/(?:^|\/)track\/([A-Za-z0-9]{22})(?:\/|$)/);
+            if (!match) return null;
+            return {
+              provider: "spotify",
+              url: "https://open.spotify.com/track/" + match[1],
+              uri: "spotify:track:" + match[1],
+              embed: "https://open.spotify.com/embed/track/" + match[1] + "?utm_source=generator",
+            };
+          }
+        } catch (e) {}
+        return null;
+      }
+      let spotifyIframeApiPromise;
+      function loadSpotifyIframeApi() {
+        if (window.SpotifyIframeApi) return Promise.resolve(window.SpotifyIframeApi);
+        if (spotifyIframeApiPromise) return spotifyIframeApiPromise;
+        spotifyIframeApiPromise = new Promise((resolve, reject) => {
+          window.onSpotifyIframeApiReady = resolve;
+          const script = document.createElement("script");
+          script.src = "https://open.spotify.com/embed/iframe-api/v1";
+          script.async = true;
+          script.onerror = () => {
+            spotifyIframeApiPromise = null;
+            reject(new Error("Não foi possível carregar o player oficial do Spotify."));
+          };
+          document.head.appendChild(script);
+        });
+        return spotifyIframeApiPromise;
+      }
       /* Discord ao vivo (API própria do site) */
       const DCC = {},
         DAI = {};
@@ -12357,11 +12629,21 @@
         root.className = "pf pfr";
         root.style.cssText = "color:" + tx + ";background-color:" + bg;
         if (Q.bg) {
-          const bi = document.createElement("img");
+          const isVideoBg = /\.(mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i.test(String(Q.bg));
+          const bi = document.createElement(isVideoBg ? "video" : "img");
           bi.className = "pfbg";
-          bi.alt = "";
-          bi.decoding = "async";
-          bi.draggable = false;
+          if (isVideoBg) {
+            bi.muted = true;
+            bi.autoplay = true;
+            bi.loop = true;
+            bi.playsInline = true;
+            bi.setAttribute("aria-hidden", "true");
+            bi.preload = "metadata";
+          } else {
+            bi.alt = "";
+            bi.decoding = "async";
+            bi.draggable = false;
+          }
           bi.src = Q.bg;
           root.appendChild(bi);
           if (Q.grad) {
@@ -12671,6 +12953,14 @@
             wantPlay = false,
             pi = null,
             pl = null,
+            vb = null,
+            vr = null,
+            volumeGroup = null,
+            embedWrap = null,
+            embedFrame = null,
+            embedTarget = null,
+            embedProvider = "",
+            spotifyController = null,
             switching = 0;
           a1.preload = "auto";
           a2.preload = "auto";
@@ -12678,7 +12968,7 @@
           a2.volume = vol;
           a1.loop = A.length <= 1;
           a2.loop = false;
-          a1.src = A[ix].src;
+          if (A[ix].src) a1.src = A[ix].src;
           let nxI = -1;
           const nextIx = (d) => {
             if (A.length <= 1) return ix;
@@ -12696,11 +12986,14 @@
             }
             const n = nextIx(1);
             nxI = n;
-            if (A[n] && A[n].src) {
+            if (A[n] && A[n].src && !A[n].provider) {
               nx.src = A[n].src;
               try {
                 nx.load();
               } catch (e) {}
+            } else {
+              nxI = -1;
+              nx.removeAttribute("src");
             }
           };
           preloadNext();
@@ -12710,7 +13003,7 @@
             a2.volume = v;
           };
           const sync = () => {
-            vb.firstChild.textContent = au.paused ? "volume_off" : "volume_up";
+            if (vb) vb.firstChild.textContent = au.paused ? "volume_off" : "volume_up";
             if (pi) pi.textContent = au.paused ? "play_arrow" : "pause";
           };
           const play = () => {
@@ -12735,10 +13028,137 @@
               goP();
             }
           };
-          const vb = document.createElement("button");
+          const clearEmbed = () => {
+            if (spotifyController) {
+              spotifyController.pause();
+              spotifyController = null;
+            }
+            if (embedFrame) embedFrame.src = "about:blank";
+            if (embedWrap) embedWrap.remove();
+            embedFrame = null;
+            embedTarget = null;
+            embedProvider = "";
+            embedWrap = null;
+            if (pl) {
+              pl.style.display = "";
+              pl.querySelector(".tr").style.display = "";
+              pl.querySelector(".ctl").style.display = "";
+              pl.querySelectorAll(".ctl .pfb")[1].style.display = "";
+            }
+            if (volumeGroup) volumeGroup.style.display = "";
+            else {
+              if (vb) vb.style.display = "";
+              if (vr) vr.style.display = "";
+            }
+          };
+          const youtubeFrame = (parsed, autoplay) => {
+            const src = new URL(parsed.embed);
+            src.searchParams.set("autoplay", autoplay ? "1" : "0");
+            src.searchParams.set("enablejsapi", "1");
+            if (/^https?:$/.test(location.protocol)) src.searchParams.set("origin", location.origin);
+            embedFrame = document.createElement("iframe");
+            const frame = embedFrame;
+            frame.src = src.href;
+            frame.title = "Player de YouTube: " + A[ix].t;
+            frame.loading = "lazy";
+            frame.referrerPolicy = "strict-origin-when-cross-origin";
+            frame.allow = "autoplay; encrypted-media; picture-in-picture";
+            frame.allowFullscreen = true;
+            frame.style.cssText = "display:block;width:100%;border:0;border-radius:12px;aspect-ratio:16/9;height:auto";
+            const playVideo = () => {
+              if (!wantPlay || !frame.isConnected || !frame.contentWindow) return;
+              frame.contentWindow.postMessage(
+                JSON.stringify({ event: "command", func: "playVideo", args: [] }),
+                "https://www.youtube-nocookie.com",
+              );
+            };
+            frame.addEventListener("load", playVideo);
+            embedWrap.appendChild(frame);
+            if (autoplay) playVideo();
+          };
+          const showEmbed = (itm) => {
+            clearEmbed();
+            const parsed = parseAudioLink(itm.url);
+            if (!parsed || parsed.provider !== itm.provider) return;
+            embedWrap = document.createElement("div");
+            embedWrap.style.cssText =
+              "width:min(420px,100%);margin:8px auto 0;overflow:hidden;border-radius:12px";
+            embedProvider = itm.provider;
+            if (itm.provider === "youtube") {
+              youtubeFrame(parsed, wantPlay);
+            } else {
+              embedTarget = document.createElement("div");
+              embedTarget.style.cssText = "width:100%;min-width:280px;height:152px";
+              embedWrap.appendChild(embedTarget);
+            }
+            c.appendChild(embedWrap);
+            if (itm.provider === "spotify") {
+              const target = embedTarget;
+              loadSpotifyIframeApi()
+                .then((api) => {
+                  if (!target.isConnected) return;
+                  api.createController(
+                    target,
+                    { uri: parsed.uri, width: "100%", height: "152" },
+                    (controller) => {
+                      if (!target.isConnected) {
+                        controller.pause();
+                        return;
+                      }
+                      spotifyController = controller;
+                      if (wantPlay) controller.play();
+                    },
+                  );
+                })
+                .catch((error) => {
+                  console.error("Falha ao iniciar o player oficial do Spotify:", error);
+                  if (!target.isConnected) return;
+                  embedFrame = document.createElement("iframe");
+                  const fallbackUrl = new URL(parsed.embed);
+                  if (wantPlay) fallbackUrl.searchParams.set("autoplay", "1");
+                  embedFrame.src = fallbackUrl.href;
+                  embedFrame.title = "Player de Spotify: " + itm.t;
+                  embedFrame.loading = "lazy";
+                  embedFrame.referrerPolicy = "strict-origin-when-cross-origin";
+                  embedFrame.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture";
+                  embedFrame.style.cssText = "display:block;width:100%;height:152px;border:0;border-radius:12px";
+                  target.replaceWith(embedFrame);
+                  embedTarget = null;
+                });
+            }
+            if (pl) {
+              pl.querySelector(".tr").style.display = "none";
+              pl.querySelector(".ctl").style.display = A.length <= 1 ? "none" : "";
+              pl.querySelectorAll(".ctl .pfb")[1].style.display = "none";
+            }
+            if (volumeGroup) volumeGroup.style.display = "none";
+            else {
+              if (vb) vb.style.display = "none";
+              if (vr) vr.style.display = "none";
+            }
+          };
+          const playEmbed = () => {
+            wantPlay = true;
+            if (embedProvider === "spotify") {
+              if (spotifyController) spotifyController.play();
+              return;
+            }
+            if (embedProvider !== "youtube" || !embedFrame) return;
+            const src = new URL(embedFrame.src);
+            if (src.searchParams.get("autoplay") !== "1") {
+              src.searchParams.set("autoplay", "1");
+              embedFrame.src = src.href;
+            }
+            if (embedFrame.contentWindow) {
+              embedFrame.contentWindow.postMessage(
+                JSON.stringify({ event: "command", func: "playVideo", args: [] }),
+                "https://www.youtube-nocookie.com",
+              );
+            }
+          };
+          vb = document.createElement("button");
           vb.className = "pfb";
           vb.setAttribute("aria-label", "Ligar ou desligar o som");
-          vb.style.cssText = "position:fixed;top:calc(var(--safe-t) + 14px);left:14px;z-index:6";
           vb.innerHTML = '<span class="ms" style="font-size:30px">volume_off</span>';
           const toggle = () => {
             if (au.paused) {
@@ -12752,18 +13172,19 @@
           a1.onplay = a2.onplay = sync;
           a1.onpause = a2.onpause = sync;
           vb.onclick = toggle;
-          root.appendChild(vb);
           if (!(Q.tg && Q.tg["Controle de volume"] === false)) {
-            const vr = document.createElement("input");
+            vr = document.createElement("input");
             vr.type = "range";
             vr.min = 0;
             vr.max = 100;
             vr.value = 60;
             vr.setAttribute("aria-label", "Volume");
-            vr.style.cssText = "position:fixed;top:calc(var(--safe-t) + 34px);left:84px;width:100px;z-index:6";
             vr.oninput = () => setVol(vr.value / 100);
-            root.appendChild(vr);
           }
+          volumeGroup = document.createElement("div");
+          volumeGroup.className = "pf-volume";
+          volumeGroup.appendChild(vb);
+          if (vr) volumeGroup.appendChild(vr);
           const upd = () => {
             if (!pl) return;
             pl.querySelector(".tt").textContent = A[ix].t;
@@ -12774,13 +13195,13 @@
                 if (cvE.firstChild) cvE.firstChild.style.display = u ? "none" : "";
               };
             setCv(itm.cv || "");
-            if (!itm.cv) {
+            if (!itm.cv && itm.src) {
               const my = ix;
               id3Cover(itm.src).then((u) => {
                 if (u && ix === my) setCv(u);
               });
             }
-            pl.querySelector(".td").textContent = fmt(A[ix].d || au.duration || 0);
+            pl.querySelector(".td").textContent = fmt(A[ix].d || (itm.src && au.duration) || 0);
           };
           const step = (d) => {
             if (A.length <= 1) {
@@ -12792,14 +13213,28 @@
             if (switching) return;
             switching = 1;
             const n = typeof d === "number" && d !== 1 ? nextIx(d) : nxI >= 0 ? nxI : nextIx(1);
-            const target = A[n] && A[n].src;
-            if (!target) {
+            const item = A[n];
+            if (!item || (!item.src && !item.provider)) {
               switching = 0;
               return;
             }
             try {
               au.pause();
             } catch (e) {}
+            if (item.provider) {
+              wantPlay = true;
+              au.removeAttribute("src");
+              nx.removeAttribute("src");
+              nxI = -1;
+              ix = n;
+              showEmbed(item);
+              playEmbed();
+              upd();
+              switching = 0;
+              return;
+            }
+            clearEmbed();
+            const target = item.src;
             // se o buffer já tem a próxima, só troca o ponteiro (zero gap)
             if (nxI === n && nx.src) {
               ix = n;
@@ -12876,20 +13311,32 @@
             bs[0].onclick = () => step(-1);
             bs[1].onclick = toggle;
             bs[2].onclick = () => step(1);
+            pl.querySelector(".ctl").appendChild(volumeGroup);
             rg.oninput = () => {
               au.currentTime = (rg.value / 1000) * (au.duration || 0);
             };
             a1.onloadedmetadata = a2.onloadedmetadata = upd;
             upd();
             root.appendChild(pl);
+          } else {
+            volumeGroup.style.cssText = "position:fixed;top:calc(var(--safe-t) + 14px);left:14px;z-index:6";
+            volumeGroup.classList.add("pf-volume-standalone");
+            root.appendChild(volumeGroup);
           }
+          if (A[ix].provider) showEmbed(A[ix]);
           go = () => {
+            if (A[ix].provider) {
+              playEmbed();
+              return;
+            }
             wantPlay = true;
             playWhenReady();
           };
           if (!opt.forceSplash && !(Q.en === undefined ? A.length > 0 : !!Q.en)) {
-            wantPlay = true;
-            playWhenReady();
+            if (!A[ix].provider) {
+              wantPlay = true;
+              playWhenReady();
+            }
           }
           stopAudio = () => {
             wantPlay = false;
@@ -12897,6 +13344,12 @@
               a1.pause();
               a2.pause();
             } catch (e) {}
+            if (embedFrame) embedFrame.src = "about:blank";
+            if (embedWrap) embedWrap.remove();
+            if (spotifyController) spotifyController.pause();
+            spotifyController = null;
+            embedTarget = null;
+            embedProvider = "";
           };
         }
         const enOn = Q.en === undefined ? A.length > 0 : !!Q.en;
@@ -12944,24 +13397,26 @@
         const w = $("#v-prof"),
           mine = U[h] ? h : ALM()[h];
         const draw = (Q, ow, own) => {
-          if (!own) {
-            const dv = /Mobi|Android|iPhone/.test(navigator.userAgent) ? "Celular" : "Computador";
-            let sr = "Direto";
-            try {
-              if (document.referrer) {
-                const x = new URL(document.referrer).hostname;
-                if (x && x !== location.hostname) sr = x;
-              }
-            } catch (e) {}
-            api("POST", "/api/view/" + encodeURIComponent(ow), { dv, src: sr })
-              .then((r) => {
-                if (r && r.views != null) {
-                  const e = document.querySelector("#v-prof .pfv");
-                  if (e && e.lastChild && e.lastChild.nodeType === 3) e.lastChild.textContent = String(r.views);
+          const dv = /Mobi|Android|iPhone/.test(navigator.userAgent) ? "Celular" : "Computador";
+          let sr = "Direto";
+          try {
+            if (document.referrer) {
+              const x = new URL(document.referrer).hostname;
+              if (x && x !== location.hostname) sr = x;
+            }
+          } catch (e) {}
+          api("POST", "/api/view/" + encodeURIComponent(ow), { dv, src: sr })
+            .then((r) => {
+              if (Number.isSafeInteger(r && r.views) && getH() === h) {
+                if (own && S === ow) {
+                  P.views = r.views;
+                  saveLocal();
                 }
-              })
-              .catch(() => {});
-          }
+                const e = document.querySelector("#v-prof .pfv");
+                if (e && e.lastChild && e.lastChild.nodeType === 3) e.lastChild.textContent = String(r.views);
+              }
+            })
+            .catch((error) => console.error("Falha ao registrar a visualização do perfil:", error));
           const count = (l) => {
             if (own) return;
             api("POST", "/api/click/" + encodeURIComponent(ow), { n: l.n }, { keepalive: true }).catch(() => {});
@@ -13540,7 +13995,7 @@
         if (e.target.id === "dlg") e.target.classList.remove("open");
       };
       const val = (id) => (($("#" + id) || {}).value || "").trim();
-      const BADU = "Use 3 a 20 caracteres: letras minúsculas, números, _ ou -.";
+      const BADU = "Use de 2 a 20 caracteres: letras minúsculas, números, _ ou -.";
       function aliasDlg() {
         const cur = (U[S].alias || [])[0] || "";
         dialog({
@@ -13583,8 +14038,10 @@
                 return e.status === 409
                   ? "Essa URL já está em uso."
                   : e.status === 400
-                    ? BADU
-                    : "Não foi possível alterar o nome.";
+                    ? (e.data && e.data.error) || BADU
+                    : e.status === 404
+                      ? "A troca de nome ainda não está disponível no servidor. Atualize o backend."
+                      : (e.data && e.data.error) || "Não foi possível alterar o nome. Verifique a conexão e tente novamente.";
               }
               U[u] = U[S];
               U[u].slug = u;
@@ -13872,7 +14329,8 @@
       function renderAud() {
         const A = P.audios || [],
           L = $("#audL");
-        $("#audN").textContent = "Áudios (" + A.length + "/2)";
+        $("#audN").textContent = "Áudios";
+        $("#audN").append(" (" + A.length + "/" + AUDLIM() + ")");
         L.innerHTML = "";
         A.forEach((a) => {
           const r = document.createElement("div");
@@ -13883,7 +14341,11 @@
             (P.act === a.id ? '<em class="atv">ATIVO</em>' : "") +
             '<button class="ic4" aria-label="Renomear"><span class="ms">edit</span></button><button class="ic4 del" aria-label="Excluir"><span class="ms">delete</span></button>';
           r.querySelector("b").textContent = a.t;
-          r.querySelector("span:not(.ms)").textContent = fmt(a.d);
+          r.querySelector("span:not(.ms)").textContent = a.provider
+            ? a.provider === "spotify"
+              ? "Spotify"
+              : "YouTube"
+            : fmt(a.d);
           if (a.cv) {
             const ic = r.querySelector(".bic");
             ic.innerHTML = "";
@@ -13945,13 +14407,14 @@
           return;
         }
         nA = {};
-        $("#naH").textContent = "Adicionar um áudio";
+        $("#naH").textContent = "Adicionar uma música";
         $("#naGo").textContent = "Adicionar áudio";
         $("#naFile").value = "";
         $("#naCov").value = "";
+        $("#naUrl").value = "";
         $("#naT").value = "";
         $("#naE").textContent = "";
-        $("#naF").textContent = "Clique para enviar um áudio";
+        $("#naF").textContent = "Clique para enviar um arquivo de áudio";
         $("#naC").textContent = "Clique para enviar uma capa de áudio";
         $("#aud2").classList.add("open");
       };
@@ -13978,6 +14441,7 @@
         nA = { edit: a.id };
         $("#naFile").value = "";
         $("#naCov").value = "";
+        $("#naUrl").value = a.url || "";
         $("#naT").value = a.t;
         $("#naE").textContent = "";
         $("#naF").textContent = "Trocar o arquivo de áudio (opcional)";
@@ -13989,15 +14453,18 @@
       $("#naFile").onchange = (e) => {
         const f = e.target.files[0];
         if (!f) return;
+        nA.file = null;
+        nA.mime = null;
         const mm = audMime(f);
         if (!mm) {
           $("#naE").textContent = "Formato não suportado (use MP3, OGG, WAV, M4A, MP4, AAC ou FLAC).";
           return;
         }
-        if (f.size > 12e6) {
-          $("#naE").textContent = "Áudio muito grande (máx. 12 MB).";
+        if (f.size > UP_MAX) {
+          $("#naE").textContent = "Áudio muito grande (máx. 1 GB).";
           return;
         }
+        $("#naUrl").value = "";
         const u = URL.createObjectURL(f),
           a = new Audio();
         a.preload = "metadata";
@@ -14050,10 +14517,29 @@
         };
         im.src = u;
       };
+      $("#naUrl").oninput = (e) => {
+        if (e.target.value.trim()) {
+          $("#naFile").value = "";
+          nA.file = null;
+          nA.mime = null;
+          delete nA.name;
+          delete nA.d;
+        }
+      };
       $("#naGo").onclick = async () => {
         const ed = nA.edit ? (P.audios || []).find((x) => x.id === nA.edit) : null;
-        if (!ed && !nA.file) {
-          $("#naE").textContent = "Envie um arquivo de áudio.";
+        const linkValue = $("#naUrl").value.trim();
+        const link = linkValue ? parseAudioLink(linkValue) : null;
+        if (linkValue && !link) {
+          $("#naE").textContent = "Cole um link válido de faixa do Spotify ou vídeo do YouTube.";
+          return;
+        }
+        if (nA.file && link) {
+          $("#naE").textContent = "Escolha um arquivo ou um link, não os dois.";
+          return;
+        }
+        if (!ed && !nA.file && !link) {
+          $("#naE").textContent = "Envie um arquivo ou cole um link válido do Spotify/YouTube.";
           return;
         }
         if (!ed && (P.audios || []).length >= AUDLIM()) {
@@ -14064,23 +14550,38 @@
         btn.disabled = true;
         $("#naE").textContent = "Enviando…";
         try {
-          let src = ed ? ed.src : "",
+          let media = ed
+            ? { src: ed.src, provider: ed.provider, url: ed.url, d: ed.d }
+            : {},
             cv = ed ? ed.cv : undefined,
             d = ed ? ed.d : 0;
           if (nA.file) {
-            src = await upl(nA.file, nA.mime);
+            media = {
+              src: await upl(nA.file, nA.mime, (progress) => {
+                $("#naE").textContent = "Enviando " + progress + "%…";
+              }),
+            };
             d = nA.d;
+          } else if (link) {
+            media = { provider: link.provider, url: link.url };
+            d = 0;
           }
           if (nA.cvBlob) cv = await upl(nA.cvBlob, "image/jpeg");
-          const t = $("#naT").value.trim().slice(0, 40) || (ed ? ed.t : nA.name) || "Áudio";
+          const t =
+            $("#naT").value.trim().slice(0, 40) ||
+            (ed ? ed.t : nA.name) ||
+            (link ? (link.provider === "spotify" ? "Música do Spotify" : "Vídeo do YouTube") : "Áudio");
           if (ed) {
             ed.t = t;
-            ed.src = src;
+            delete ed.src;
+            delete ed.provider;
+            delete ed.url;
+            Object.assign(ed, media);
             ed.d = d;
             if (cv) ed.cv = cv;
             else delete ed.cv;
           } else {
-            const a = { id: "a" + Date.now(), t, src, d };
+            const a = { id: "a" + Date.now(), t, ...media, d };
             if (cv) a.cv = cv;
             P.audios = P.audios || [];
             P.audios.push(a);
@@ -15964,7 +16465,7 @@
         }
         if (isGif(f)) {
           if (f.size > GIF_MAX) {
-            toast("GIF muito grande (máx. 12 MB).");
+            toast("GIF muito grande (máx. 1 GB).");
             return;
           }
           toast("Enviando…");
@@ -16299,7 +16800,7 @@
         }
         if (isGif(f)) {
           if (f.size > GIF_MAX) {
-            toast("GIF muito grande (máx. 12 MB).");
+            toast("GIF muito grande (máx. 1 GB).");
             return;
           }
           toast("Enviando…");
@@ -17280,6 +17781,14 @@
             "Caricamenti di file",
           ],
           ["Assinantes", "Subscribers", "Suscriptores", "Abonnés", "Abonnenten", "Abbonati"],
+          [
+            "Não foi possível carregar as estatísticas. Tente novamente mais tarde.",
+            "Could not load statistics. Please try again later.",
+            "No se pudieron cargar las estadísticas. Inténtalo de nuevo más tarde.",
+            "Impossible de charger les statistiques. Réessayez plus tard.",
+            "Statistiken konnten nicht geladen werden. Bitte versuche es später erneut.",
+            "Impossibile caricare le statistiche. Riprova più tardi.",
+          ],
           ["Garantir agora", "Claim now", "Reservar ahora", "Réserver maintenant", "Jetzt sichern", "Riservalo ora"],
           [
             "Garanta seu perfil e crie sua conta em minutos!",
@@ -17435,6 +17944,183 @@
             "Aggiungi una canzone",
           ],
           [
+            "Gerenciador de música e áudio",
+            "Music and audio manager",
+            "Gestor de música y audio",
+            "Gestionnaire de musique et audio",
+            "Musik- und Audioverwaltung",
+            "Gestione musica e audio",
+          ],
+          [
+            "Adicione um arquivo seu ou um link do Spotify/YouTube. Para ativar uma música, selecione-a clicando.",
+            "Add your own file or a Spotify/YouTube link. Select a song to activate it.",
+            "Añade tu propio archivo o un enlace de Spotify/YouTube. Selecciona una canción para activarla.",
+            "Ajoutez votre fichier ou un lien Spotify/YouTube. Sélectionnez une musique pour l'activer.",
+            "Füge eine eigene Datei oder einen Spotify-/YouTube-Link hinzu. Wähle einen Titel aus, um ihn zu aktivieren.",
+            "Aggiungi un file o un link Spotify/YouTube. Seleziona un brano per attivarlo.",
+          ],
+          [
+            "Adicionar música/áudio",
+            "Add music/audio",
+            "Añadir música/audio",
+            "Ajouter musique/audio",
+            "Musik/Audio hinzufügen",
+            "Aggiungi musica/audio",
+          ],
+          [
+            "Adicionar uma música",
+            "Add a song",
+            "Añadir una canción",
+            "Ajouter une musique",
+            "Musik hinzufügen",
+            "Aggiungi una canzone",
+          ],
+          [
+            "Link do Spotify ou YouTube",
+            "Spotify or YouTube link",
+            "Enlace de Spotify o YouTube",
+            "Lien Spotify ou YouTube",
+            "Spotify- oder YouTube-Link",
+            "Link Spotify o YouTube",
+          ],
+          [
+            "Cole o link da música ou vídeo",
+            "Paste the song or video link",
+            "Pega el enlace de la canción o el video",
+            "Collez le lien de la musique ou de la vidéo",
+            "Füge den Link zum Song oder Video ein",
+            "Incolla il link della canzone o del video",
+          ],
+          [
+            "Envie um arquivo ou cole um link; ele toca no player oficial.",
+            "Upload a file or paste a link; it plays in the official player.",
+            "Sube un archivo o pega un enlace; se reproduce en el reproductor oficial.",
+            "Envoyez un fichier ou collez un lien ; il sera lu dans le lecteur officiel.",
+            "Lade eine Datei hoch oder füge einen Link ein; die Wiedergabe erfolgt im offiziellen Player.",
+            "Carica un file o incolla un link; verrà riprodotto nel player ufficiale.",
+          ],
+          [
+            "Clique para enviar um arquivo de áudio",
+            "Click to upload an audio file",
+            "Haz clic para subir un archivo de audio",
+            "Cliquez pour envoyer un fichier audio",
+            "Klicke, um eine Audiodatei hochzuladen",
+            "Clicca per caricare un file audio",
+          ],
+          [
+            "Título do áudio",
+            "Audio title",
+            "Título del audio",
+            "Titre audio",
+            "Audiotitel",
+            "Titolo dell'audio",
+          ],
+          ["Áudios", "Audio tracks", "Audios", "Pistes audio", "Audiotitel", "Tracce audio"],
+          [
+            "Adicionar um título...",
+            "Add a title...",
+            "Añadir un título...",
+            "Ajouter un titre...",
+            "Titel hinzufügen...",
+            "Aggiungi un titolo...",
+          ],
+          [
+            "Adicionar áudio",
+            "Add audio",
+            "Añadir audio",
+            "Ajouter un audio",
+            "Audio hinzufügen",
+            "Aggiungi audio",
+          ],
+          [
+            "Editar áudio",
+            "Edit audio",
+            "Editar audio",
+            "Modifier l'audio",
+            "Audio bearbeiten",
+            "Modifica audio",
+          ],
+          [
+            "Trocar o arquivo de áudio (opcional)",
+            "Replace the audio file (optional)",
+            "Cambiar el archivo de audio (opcional)",
+            "Remplacer le fichier audio (facultatif)",
+            "Audiodatei ersetzen (optional)",
+            "Sostituisci il file audio (facoltativo)",
+          ],
+          [
+            "Clique para enviar uma capa de áudio",
+            "Click to upload audio cover art",
+            "Haz clic para subir una portada de audio",
+            "Cliquez pour envoyer une pochette audio",
+            "Klicke, um ein Audio-Cover hochzuladen",
+            "Clicca per caricare una copertina audio",
+          ],
+          [
+            "Áudio adicionado.",
+            "Audio added.",
+            "Audio añadido.",
+            "Audio ajouté.",
+            "Audio hinzugefügt.",
+            "Audio aggiunto.",
+          ],
+          [
+            "Áudio atualizado.",
+            "Audio updated.",
+            "Audio actualizado.",
+            "Audio mis à jour.",
+            "Audio aktualisiert.",
+            "Audio aggiornato.",
+          ],
+          [
+            "Áudio removido.",
+            "Audio removed.",
+            "Audio eliminado.",
+            "Audio supprimé.",
+            "Audio entfernt.",
+            "Audio rimosso.",
+          ],
+          [
+            "Música do Spotify",
+            "Spotify track",
+            "Canción de Spotify",
+            "Titre Spotify",
+            "Spotify-Titel",
+            "Brano Spotify",
+          ],
+          [
+            "Vídeo do YouTube",
+            "YouTube video",
+            "Vídeo de YouTube",
+            "Vidéo YouTube",
+            "YouTube-Video",
+            "Video YouTube",
+          ],
+          [
+            "Cole um link válido de faixa do Spotify ou vídeo do YouTube.",
+            "Paste a valid Spotify track or YouTube video link.",
+            "Pega un enlace válido de una canción de Spotify o un video de YouTube.",
+            "Collez un lien valide vers un titre Spotify ou une vidéo YouTube.",
+            "Füge einen gültigen Link zu einem Spotify-Titel oder YouTube-Video ein.",
+            "Incolla un link valido a un brano Spotify o a un video YouTube.",
+          ],
+          [
+            "Escolha um arquivo ou um link, não os dois.",
+            "Choose a file or a link, not both.",
+            "Elige un archivo o un enlace, no ambos.",
+            "Choisissez un fichier ou un lien, pas les deux.",
+            "Wähle eine Datei oder einen Link, nicht beides.",
+            "Scegli un file o un link, non entrambi.",
+          ],
+          [
+            "Envie um arquivo ou cole um link válido do Spotify/YouTube.",
+            "Upload a file or paste a valid Spotify/YouTube link.",
+            "Sube un archivo o pega un enlace válido de Spotify/YouTube.",
+            "Envoyez un fichier ou collez un lien Spotify/YouTube valide.",
+            "Lade eine Datei hoch oder füge einen gültigen Spotify-/YouTube-Link ein.",
+            "Carica un file o incolla un link Spotify/YouTube valido.",
+          ],
+          [
             "Mostrar seu Discord",
             "Show your Discord",
             "Mostrar tu Discord",
@@ -17581,6 +18267,14 @@
             "Cliquez pour envoyer un fichier",
             "Zum Hochladen klicken",
             "Clicca per caricare un file",
+          ],
+          [
+            "Imagens, GIFs e vídeos MP4, WEBM, MOV ou OGV — até 1 GB.",
+            "Images, GIFs, and MP4, WEBM, MOV, or OGV videos — up to 1 GB.",
+            "Imágenes, GIFs y videos MP4, WEBM, MOV u OGV — hasta 1 GB.",
+            "Images, GIF et vidéos MP4, WEBM, MOV ou OGV — jusqu'à 1 Go.",
+            "Bilder, GIFs und MP4-, WEBM-, MOV- oder OGV-Videos — bis zu 1 GB.",
+            "Immagini, GIF e video MP4, WEBM, MOV o OGV — fino a 1 GB.",
           ],
           ["Ícone", "Icon", "Icono", "Icône", "Symbol", "Icona"],
           [
@@ -17975,6 +18669,37 @@
           ["Fechar", "Close", "Cerrar", "Fermer", "Schließen", "Chiudi"],
           ["Salvar", "Save", "Guardar", "Enregistrer", "Speichern", "Salva"],
           ["Nenhum", "None", "Ninguno", "Aucun", "Keine", "Nessuno"],
+          [
+            "✨ Efeitos de fundo",
+            "✨ Background effects",
+            "✨ Efectos de fondo",
+            "✨ Effets d'arrière-plan",
+            "✨ Hintergrundeffekte",
+            "✨ Effetti di sfondo",
+          ],
+          ["✨ Nenhum", "✨ None", "✨ Ninguno", "✨ Aucun", "✨ Keine", "✨ Nessuno"],
+          ["🌧️ Chuva", "🌧️ Rain", "🌧️ Lluvia", "🌧️ Pluie", "🌧️ Regen", "🌧️ Pioggia"],
+          ["❄️ Neve", "❄️ Snow", "❄️ Nieve", "❄️ Neige", "❄️ Schnee", "❄️ Neve"],
+          ["🌟 Estrelas", "🌟 Stars", "🌟 Estrellas", "🌟 Étoiles", "🌟 Sterne", "🌟 Stelle"],
+          [
+            "🎯 Alinhamento dos ícones sociais",
+            "🎯 Social icon alignment",
+            "🎯 Alineación de iconos sociales",
+            "🎯 Alignement des icônes sociales",
+            "🎯 Ausrichtung der Social-Icons",
+            "🎯 Allineamento delle icone social",
+          ],
+          [
+            "⚙️ Padrão do layout",
+            "⚙️ Layout default",
+            "⚙️ Predeterminado del diseño",
+            "⚙️ Par défaut du modèle",
+            "⚙️ Layout-Standard",
+            "⚙️ Predefinito del layout",
+          ],
+          ["⬅️ Esquerda", "⬅️ Left", "⬅️ Izquierda", "⬅️ Gauche", "⬅️ Links", "⬅️ Sinistra"],
+          ["↔️ Centro", "↔️ Center", "↔️ Centro", "↔️ Centre", "↔️ Mitte", "↔️ Centro"],
+          ["➡️ Direita", "➡️ Right", "➡️ Derecha", "➡️ Droite", "➡️ Rechts", "➡️ Destra"],
           ["Novo", "New", "Nuevo", "Nouveau", "Neu", "Nuovo"],
           [
             "Customização: em breve.",
